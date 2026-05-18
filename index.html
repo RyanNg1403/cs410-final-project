@@ -3,257 +3,454 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CS410 Final Project | PBT-MAP-Elites</title>
+    <title>Evolving Populations of Diverse RL Agents with MAP-Elites — CS410.Q21 Final Project</title>
     <meta
       name="description"
-      content="CS410.Q21 final project page for Evolving Populations of Diverse RL Agents with MAP-Elites."
+      content="CS410.Q21 (UIT) final project page reviewing Flajolet & Pierrot, ICLR 2023: Evolving Populations of Diverse RL Agents with MAP-Elites."
+    >
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Castoro:ital@0;1&family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
     >
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
     <header class="site-header">
-      <a class="brand" href="#top">CS410.Q21 Final Project</a>
+      <a class="brand" href="#top">
+        <span class="brand-mark">CS410.Q21</span>
+        <span class="brand-sub">Final Project · UIT</span>
+      </a>
       <nav aria-label="Primary">
+        <a href="#abstract">Abstract</a>
         <a href="#course">Course</a>
         <a href="#method">Method</a>
         <a href="#experiments">Experiments</a>
-        <a href="#videos">Videos</a>
-        <a href="#resources">Resources</a>
+        <a href="#videos">Rollouts</a>
+        <a href="#results">Results</a>
+        <a href="#bibtex">BibTeX</a>
       </nav>
     </header>
 
-    <main id="top">
-      <section class="hero" aria-labelledby="page-title">
-        <div class="hero-copy">
-          <p class="eyebrow">Mạng neural và thuật giải di truyền</p>
-          <h1 id="page-title">CS410 Final Project: Evolving Populations of Diverse RL Agents with MAP-Elites</h1>
-          <p>
-            This page documents our final project for CS410.Q21 at UIT. We study the
-            ICLR 2023 paper by Arthur Flajolet and Thomas Pierrot and reproduce the
-            main ideas through QDax experiment assets and rollout visualizations.
-          </p>
-          <div class="hero-actions" aria-label="Project links">
-            <a class="button primary" href="6235_evolving_populations_of_divers.pdf">Read paper</a>
-            <a class="button" href="https://github.com/adaptive-intelligent-robotics/QDax">QDax repo</a>
-            <a class="button" href="#videos">View rollouts</a>
-          </div>
-        </div>
-      </section>
+    <main id="main">
+      <!-- ───── HERO ───── -->
+      <section class="hero" id="top" aria-labelledby="page-title">
+        <p class="venue">CS410.Q21 — Final Project · ICLR 2023 paper review</p>
 
-      <section class="summary-band" aria-label="Project summary">
-        <div class="summary-item">
-          <span>Course</span>
-          <strong>CS410.Q21</strong>
-        </div>
-        <div class="summary-item">
-          <span>Topic</span>
-          <strong>Neural Networks and Genetic Algorithm</strong>
-        </div>
-        <div class="summary-item">
-          <span>Project Focus</span>
-          <strong>Quality Diversity RL</strong>
-        </div>
-        <div class="summary-item">
-          <span>Paper</span>
-          <strong>PBT-MAP-Elites</strong>
-        </div>
-      </section>
+        <h1 id="page-title">
+          Evolving Populations of Diverse<br>
+          RL Agents with MAP-Elites
+        </h1>
 
-      <section id="course" class="section course-section">
-        <p class="section-kicker">Course Context</p>
-        <h2>Why this paper fits CS410.</h2>
-        <div class="course-grid">
-          <article>
-            <span>UIT Course</span>
-            <h3>CS410.Q21</h3>
-            <p>
-              The UIT course listing identifies this class as
-              <strong>Mạng neural và thuật giải di truyền</strong>, or
-              <strong>Neural Networks and Genetic Algorithm</strong>.
-            </p>
-          </article>
-          <article>
-            <span>Syllabus Link</span>
-            <h3>Evolution meets deep RL</h3>
-            <p>
-              The paper sits directly between the two halves of the course:
-              evolutionary search through MAP-Elites and neural policy learning
-              through SAC/TD3-style reinforcement learning.
-            </p>
-          </article>
-          <article>
-            <span>Final Project</span>
-            <h3>Group seminar outcome</h3>
-            <p>
-              The CS410 syllabus includes group project work and final project
-              seminar presentations in weeks 14-15, so this site is a course
-              deliverable, not only a paper landing page.
-            </p>
-          </article>
-        </div>
-      </section>
+        <p class="subtitle">A reproducibility &amp; analysis report</p>
 
-      <section id="method" class="section two-column">
-        <div>
-          <p class="section-kicker">Core Idea</p>
-          <h2>Optimize whole agents, not only policies.</h2>
-          <p>
-            Standard MAP-Elites fills a behavior descriptor archive with diverse,
-            high-fitness solutions. This paper extends the idea to deep RL by evolving
-            entire agents: policy parameters, critic parameters, replay buffers, and
-            hyperparameters.
-          </p>
-          <p>
-            The result is a flexible framework that can pair MAP-Elites with different
-            RL learners such as SAC or TD3 while keeping the population naturally
-            parallelizable.
-          </p>
-        </div>
-        <figure class="media-frame">
-          <img src="assets/overview.png" alt="Paper overview showing benchmark environments and PBT-MAP-Elites workflow.">
-          <figcaption>Paper overview: QD-RL environments and PBT-MAP-Elites workflow.</figcaption>
+        <ol class="authors" aria-label="Project team">
+          <li>
+            <span class="author-name">Phạm Hải Đăng</span>
+            <span class="author-id">23520233</span>
+          </li>
+          <li>
+            <span class="author-name">Hồ Trọng Nghĩa</span>
+            <span class="author-id">23521009</span>
+          </li>
+          <li>
+            <span class="author-name">Nguyễn Thuận Phát</span>
+            <span class="author-id">23521146</span>
+          </li>
+          <li>
+            <span class="author-name">Nguyễn Trần Nhật Trung</span>
+            <span class="author-id">23521684</span>
+          </li>
+          <li>
+            <span class="author-name">Nguyễn Tiến Thắng</span>
+            <span class="author-id">23521429</span>
+          </li>
+        </ol>
+
+        <p class="affiliation">
+          University of Information Technology (UIT) — VNU-HCM<br>
+          Course: <em>Mạng neural và thuật giải di truyền</em> · Instructor: TS. Lương Ngọc Hoàng
+        </p>
+
+        <p class="paper-credit">
+          Reviewing &ldquo;Evolving Populations of Diverse RL Agents with MAP-Elites&rdquo;
+          by Arthur Flajolet and Thomas Pierrot, <strong>ICLR 2023</strong>.
+        </p>
+
+        <nav class="hero-actions" aria-label="Project resources">
+          <a class="pill primary" href="6235_evolving_populations_of_divers.pdf">
+            <span class="pill-icon" aria-hidden="true">📄</span>
+            <span>Paper</span>
+          </a>
+          <a class="pill" href="https://openreview.net/forum?id=CBfYffLqWqb">
+            <span class="pill-icon" aria-hidden="true">↗</span>
+            <span>OpenReview</span>
+          </a>
+          <a class="pill" href="https://github.com/adaptive-intelligent-robotics/QDax">
+            <span class="pill-icon" aria-hidden="true">{ }</span>
+            <span>Code (QDax)</span>
+          </a>
+          <a class="pill" href="#videos">
+            <span class="pill-icon" aria-hidden="true">▶</span>
+            <span>Rollouts</span>
+          </a>
+          <a class="pill" href="#bibtex">
+            <span class="pill-icon" aria-hidden="true">@</span>
+            <span>BibTeX</span>
+          </a>
+        </nav>
+
+        <figure class="teaser">
+          <img src="assets/overview.png" alt="Paper teaser: QDax benchmark environments and the PBT-MAP-Elites workflow.">
+          <figcaption>
+            <strong>Figure 1.</strong> Benchmark environments and the PBT-MAP-Elites
+            workflow. Whole agents — actor, critic, replay buffer, and
+            hyperparameters — are evolved jointly through a MAP-Elites archive
+            keyed by behavior descriptors. Reproduced from Flajolet &amp; Pierrot (2023).
+          </figcaption>
         </figure>
       </section>
 
-      <section id="experiments" class="section">
-        <p class="section-kicker">Experiment Setup</p>
-        <h2>Robotics control with behavior descriptor archives.</h2>
-        <div class="experiment-grid">
-          <article>
-            <h3>Uni-directional locomotion</h3>
+      <!-- ───── ABSTRACT ───── -->
+      <section id="abstract" class="section abstract" aria-labelledby="abstract-h">
+        <h2 id="abstract-h">Abstract</h2>
+        <p>
+          Quality-diversity (QD) methods such as MAP-Elites discover diverse,
+          high-performing solutions by maintaining an archive indexed by behavior
+          descriptors. Deep reinforcement learning, by contrast, optimizes a
+          single agent against a single objective.
+          <strong>PBT-MAP-Elites</strong> bridges the two: rather than evolving
+          policy weights alone, it evolves <em>whole agents</em> — actor and
+          critic parameters, replay buffers, and hyperparameters — and uses the
+          MAP-Elites grid both for selection and for online hyperparameter
+          search. The framework is agnostic to the inner learner; the paper
+          demonstrates it with both SAC and TD3 on five continuous-control
+          tasks from QDax/Brax, including deceptive trap environments where
+          reward-only baselines collapse.
+        </p>
+        <p>
+          This page is our CS410.Q21 final project deliverable. We summarise
+          the method, walk through the experimental setup the authors propose,
+          show rollout videos from the QDax archive, and discuss the headline
+          results.
+        </p>
+      </section>
+
+      <!-- ───── COURSE ───── -->
+      <section id="course" class="section" aria-labelledby="course-h">
+        <h2 id="course-h">1. Course context</h2>
+        <p class="section-lede">
+          CS410.Q21 is the UIT course on neural networks and evolutionary search.
+          Our motivation for choosing this paper is that it lies precisely on
+          the boundary the course is designed to study.
+        </p>
+
+        <div class="card-row">
+          <article class="card">
+            <p class="card-tag">UIT course</p>
+            <h3>Mạng neural và thuật giải di truyền</h3>
             <p>
-              HalfCheetah-Uni, Walker2d-Uni, and Ant-Uni test whether algorithms can
-              cover contact-pattern descriptor spaces while keeping strong forward
-              locomotion performance.
+              The official UIT listing titles the course
+              <em>Neural Networks and Genetic Algorithm</em>. Coursework spans
+              neural function approximation and population-based evolutionary
+              search.
             </p>
           </article>
-          <article>
-            <h3>Deceptive trap tasks</h3>
+          <article class="card">
+            <p class="card-tag">Syllabus fit</p>
+            <h3>Evolution meets deep RL</h3>
             <p>
-              AntTrap and HumanoidTrap use deceptive rewards. Agents need exploration
-              pressure to move around the obstacle instead of settling for locally
-              attractive behavior.
+              MAP-Elites is an evolutionary algorithm. SAC and TD3 are deep RL
+              policies. PBT-MAP-Elites composes them into a single optimization
+              loop — exactly the pairing the syllabus asks students to study.
             </p>
           </article>
-          <article>
-            <h3>Metrics</h3>
+          <article class="card">
+            <p class="card-tag">Deliverable</p>
+            <h3>Group seminar, weeks 14–15</h3>
             <p>
-              The reported comparisons use QD score, archive coverage, and maximum
-              fitness across repeated runs.
+              The syllabus reserves the final weeks for a group project seminar.
+              This page is the public form of that deliverable — a project page
+              first, a paper landing page second.
             </p>
           </article>
         </div>
       </section>
 
-      <section id="videos" class="section video-section">
-        <div class="section-heading">
-          <div>
-            <p class="section-kicker">Rollout Videos</p>
-            <h2>Representative behaviors from the experiment assets.</h2>
-          </div>
-          <div class="segmented" role="group" aria-label="Video filters">
-            <button class="filter is-active" type="button" data-filter="all">All</button>
-            <button class="filter" type="button" data-filter="locomotion">Locomotion</button>
-            <button class="filter" type="button" data-filter="trap">Trap</button>
-          </div>
+      <!-- ───── METHOD ───── -->
+      <section id="method" class="section" aria-labelledby="method-h">
+        <h2 id="method-h">2. Method</h2>
+        <p class="section-lede">
+          PBT-MAP-Elites is a population-based training loop wrapped around a
+          MAP-Elites archive. The archive both selects the next individuals to
+          train and propagates strong hyperparameter configurations across the
+          population.
+        </p>
+
+        <div class="prose">
+          <p>
+            Vanilla MAP-Elites fills a behavior-descriptor archive by random
+            mutation of solution parameters. Vanilla deep RL drives a single
+            agent toward a single objective. Neither alone gives you a
+            repertoire of high-performing, behaviorally distinct policies in
+            continuous-control settings.
+          </p>
+          <p>
+            <strong>PBT-MAP-Elites</strong> closes the gap. It maintains a
+            population of <em>complete</em> agents — actor weights, critic
+            weights, replay buffer, and hyperparameters — and uses the
+            MAP-Elites grid both as a selection mechanism and as a
+            hyperparameter search engine. The same framework works whether the
+            inner learner is SAC or TD3.
+          </p>
+          <p>
+            The training loop alternates between (i) collecting experience and
+            running gradient steps for every agent in the population, and
+            (ii) evaluating each agent's behavior descriptor and competing it
+            into the archive cell it lands in. Hyperparameters of strong cells
+            are inherited by weak ones — population-based training, but with
+            diversity as the selection criterion.
+          </p>
+        </div>
+      </section>
+
+      <!-- ───── EXPERIMENTS ───── -->
+      <section id="experiments" class="section" aria-labelledby="exp-h">
+        <h2 id="exp-h">3. Experimental setup</h2>
+        <p class="section-lede">
+          The authors evaluate on five continuous-control tasks from QDax/Brax,
+          spanning straightforward locomotion and deceptive trap exploration.
+        </p>
+
+        <div class="card-row">
+          <article class="card">
+            <p class="card-tag">Locomotion</p>
+            <h3>HalfCheetah / Walker2d / Ant-Uni</h3>
+            <p>
+              Uni-directional locomotion tasks probe whether algorithms can
+              cover a contact-pattern descriptor space while maintaining strong
+              forward speed.
+            </p>
+          </article>
+          <article class="card">
+            <p class="card-tag">Exploration</p>
+            <h3>AntTrap / HumanoidTrap</h3>
+            <p>
+              Deceptive trap layouts embed a local reward optimum behind an
+              obstacle. Reaching the true goal requires the exploration
+              pressure MAP-Elites supplies for free.
+            </p>
+          </article>
+          <article class="card">
+            <p class="card-tag">Metrics</p>
+            <h3>QD score, coverage, max-fitness</h3>
+            <p>
+              Comparisons report archive coverage, total QD score, and
+              best-elite fitness across multiple seeds — the standard battery
+              for quality-diversity work.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ───── VIDEOS ───── -->
+      <section id="videos" class="section" aria-labelledby="videos-h">
+        <h2 id="videos-h">4. Rollout videos</h2>
+        <p class="section-lede">
+          Representative agents drawn from the archive. Filter by task family;
+          starting one video pauses the others.
+        </p>
+
+        <div class="segmented" role="group" aria-label="Filter videos">
+          <button class="filter is-active" type="button" data-filter="all">All</button>
+          <button class="filter" type="button" data-filter="locomotion">Locomotion</button>
+          <button class="filter" type="button" data-filter="trap">Trap</button>
         </div>
 
         <div class="video-grid">
           <article class="video-card" data-category="locomotion">
-            <video controls preload="metadata" poster="assets/posters/halfcheetah-default.jpg">
-              <source src="assets/videos/halfcheetah-default.mp4" type="video/mp4">
-            </video>
-            <div>
-              <h3>HalfCheetah-Uni baseline gait</h3>
-              <p>Side-view rollout showing a learned forward locomotion behavior.</p>
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/halfcheetah-default.jpg">
+                <source src="assets/videos/halfcheetah-default.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">HalfCheetah-Uni · baseline</p>
+              <h3>Forward locomotion gait</h3>
+              <p>Side-view rollout of a learned forward-running policy from the archive.</p>
             </div>
           </article>
 
           <article class="video-card" data-category="locomotion">
-            <video controls preload="metadata" poster="assets/posters/halfcheetah-descriptor.jpg">
-              <source src="assets/videos/halfcheetah-descriptor-0587.mp4" type="video/mp4">
-            </video>
-            <div>
-              <h3>HalfCheetah descriptor variant</h3>
-              <p>Alternative gait from the archive, labeled by its descriptor value in the source file.</p>
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/halfcheetah-descriptor.jpg">
+                <source src="assets/videos/halfcheetah-descriptor-0587.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">HalfCheetah-Uni · descriptor 0.587</p>
+              <h3>Alternative archive gait</h3>
+              <p>A different cell in the descriptor archive — same task, different contact pattern.</p>
             </div>
           </article>
 
           <article class="video-card wide" data-category="trap">
-            <video controls preload="metadata" poster="assets/posters/rollout.jpg">
-              <source src="assets/videos/ant-rollout-oblique.mp4" type="video/mp4">
-            </video>
-            <div>
-              <h3>Ant rollout, oblique camera</h3>
-              <p>Longer rollout of an ant-like agent moving through a grid-world trap setup.</p>
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/rollout.jpg">
+                <source src="assets/videos/ant-rollout-oblique.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">Ant · oblique camera</p>
+              <h3>Long rollout in trap layout</h3>
+              <p>Oblique camera angle on a longer rollout through the trap environment.</p>
             </div>
           </article>
 
           <article class="video-card" data-category="trap">
-            <video controls preload="metadata" poster="assets/posters/topdown.jpg">
-              <source src="assets/videos/trap-topdown-search.mp4" type="video/mp4">
-            </video>
-            <div>
-              <h3>Top-down trap search</h3>
-              <p>Overhead trajectory view showing the agent's interaction with the obstacle layout.</p>
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/topdown.jpg">
+                <source src="assets/videos/trap-topdown-search.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">Trap · top-down</p>
+              <h3>Searching around the obstacle</h3>
+              <p>Overhead trajectory of the agent probing the trap region.</p>
             </div>
           </article>
 
           <article class="video-card" data-category="trap">
-            <video controls preload="metadata" poster="assets/posters/topdown2.jpg">
-              <source src="assets/videos/trap-topdown-solved.mp4" type="video/mp4">
-            </video>
-            <div>
-              <h3>Top-down trap completion</h3>
-              <p>Short overhead rollout where the agent clears the trap region more directly.</p>
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/topdown2.jpg">
+                <source src="assets/videos/trap-topdown-solved.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">Trap · top-down</p>
+              <h3>Clearing the trap</h3>
+              <p>A shorter rollout where the agent commits to a direct path through.</p>
             </div>
           </article>
         </div>
       </section>
 
-      <section class="section two-column results-section">
-        <div>
-          <p class="section-kicker">Results</p>
-          <h2>PBT-MAP-Elites improves archive-level performance.</h2>
+      <!-- ───── RESULTS ───── -->
+      <section id="results" class="section" aria-labelledby="results-h">
+        <h2 id="results-h">5. Results</h2>
+        <p class="section-lede">
+          PBT-MAP-Elites improves both QD score and archive coverage over a
+          population-based-training baseline that does not maintain a diversity
+          archive.
+        </p>
+
+        <figure class="figure">
+          <img src="assets/results.png" alt="Performance comparison across five QDax/Brax environments.">
+          <figcaption>
+            <strong>Figure 2.</strong> QD score and coverage across the five QDax/Brax
+            benchmark environments. The SAC variant of PBT-MAP-Elites solves
+            HumanoidTrap within budget, a known failure mode for evolutionary
+            baselines without explicit diversity pressure. Reproduced from
+            Flajolet &amp; Pierrot (2023).
+          </figcaption>
+        </figure>
+
+        <div class="prose">
           <p>
-            The paper reports that the SAC variant solves HumanoidTrap within the
-            timestep budget and that PBT-MAP-Elites generally improves coverage and
-            QD score over pure PBT because it explicitly optimizes for a diverse
-            repertoire rather than only the single best agent.
+            The takeaway for the course is that the diversity pressure is not
+            ornamental. It is what lets the population escape the deceptive
+            local optima that defeat reward-only search. When the archive is
+            removed, the population still trains — it just collapses onto a
+            single mode.
           </p>
         </div>
-        <figure class="media-frame">
-          <img src="assets/results.png" alt="Performance comparison figure from the paper.">
-          <figcaption>Main paper results across five QDax/Brax environments.</figcaption>
-        </figure>
       </section>
 
-      <section id="resources" class="section resources">
-        <p class="section-kicker">Resources</p>
-        <h2>Code and experiment references.</h2>
-        <div class="resource-grid">
-          <a href="https://github.com/adaptive-intelligent-robotics/QDax">
-            <span>Repository</span>
-            <strong>adaptive-intelligent-robotics/QDax</strong>
-          </a>
-          <a href="https://openreview.net/forum?id=CBfYffLqWqb">
-            <span>Paper page</span>
-            <strong>OpenReview ICLR 2023</strong>
-          </a>
-          <a href="https://github.com/adaptive-intelligent-robotics/QDax/blob/main/examples/me_sac_pbt.ipynb">
-            <span>Notebook</span>
-            <strong>ME-PBT with SAC</strong>
-          </a>
-          <a href="https://github.com/adaptive-intelligent-robotics/QDax/blob/main/examples/me_td3_pbt.ipynb">
-            <span>Notebook</span>
-            <strong>ME-PBT with TD3</strong>
-          </a>
-        </div>
+      <!-- ───── RESOURCES ───── -->
+      <section id="resources" class="section" aria-labelledby="res-h">
+        <h2 id="res-h">6. Resources</h2>
+
+        <ul class="resource-list">
+          <li>
+            <a href="https://github.com/adaptive-intelligent-robotics/QDax">
+              <span class="r-tag">Code</span>
+              <span class="r-title">adaptive-intelligent-robotics / QDax</span>
+              <span class="r-arrow" aria-hidden="true">↗</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://openreview.net/forum?id=CBfYffLqWqb">
+              <span class="r-tag">Paper page</span>
+              <span class="r-title">OpenReview — ICLR 2023</span>
+              <span class="r-arrow" aria-hidden="true">↗</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://github.com/adaptive-intelligent-robotics/QDax/blob/main/examples/me_sac_pbt.ipynb">
+              <span class="r-tag">Notebook</span>
+              <span class="r-title">ME-PBT with SAC</span>
+              <span class="r-arrow" aria-hidden="true">↗</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://github.com/adaptive-intelligent-robotics/QDax/blob/main/examples/me_td3_pbt.ipynb">
+              <span class="r-tag">Notebook</span>
+              <span class="r-title">ME-PBT with TD3</span>
+              <span class="r-arrow" aria-hidden="true">↗</span>
+            </a>
+          </li>
+          <li>
+            <a href="6235_evolving_populations_of_divers.pdf">
+              <span class="r-tag">PDF</span>
+              <span class="r-title">Local copy of the paper</span>
+              <span class="r-arrow" aria-hidden="true">↗</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      <!-- ───── BIBTEX ───── -->
+      <section id="bibtex" class="section bibtex" aria-labelledby="bib-h">
+        <h2 id="bib-h">BibTeX</h2>
+        <p class="section-lede">
+          If you reference the paper, please cite the authors directly:
+        </p>
+        <pre><code>@inproceedings{flajolet2023evolving,
+  title     = {Evolving Populations of Diverse {RL} Agents with {MAP}-Elites},
+  author    = {Flajolet, Arthur and Pierrot, Thomas},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2023},
+  url       = {https://openreview.net/forum?id=CBfYffLqWqb}
+}</code></pre>
+      </section>
+
+      <!-- ───── ACKNOWLEDGEMENTS ───── -->
+      <section class="section ack" aria-label="Acknowledgements">
+        <h2>Acknowledgements</h2>
+        <p>
+          We thank Arthur Flajolet, Thomas Pierrot, and the QDax team for
+          releasing the codebase and the example notebooks that made this study
+          possible. The rollout videos on this page were generated by the
+          project team using the upstream QDax repository. The page is
+          maintained as a CS410.Q21 final-project deliverable under the
+          supervision of TS. Lương Ngọc Hoàng, University of Information
+          Technology (UIT).
+        </p>
       </section>
     </main>
 
-    <footer>
-      <p>CS410 final project page. Built from the provided paper, QDax repository, and team rollout videos.</p>
+    <footer class="site-footer">
+      <div>
+        <p class="foot-brand">CS410.Q21 — UIT</p>
+        <p class="foot-sub">Final project page. Paper figures © Flajolet &amp; Pierrot, ICLR 2023; rollout videos by the project team.</p>
+      </div>
+      <p class="colophon">
+        Set in <em>Castoro</em> &amp; <em>Noto Sans</em>.
+        Static page, no build step.
+      </p>
     </footer>
 
     <script src="script.js"></script>
