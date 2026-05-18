@@ -226,6 +226,7 @@ figcaption {
 }
 
 .experiment-grid,
+.course-grid,
 .video-grid,
 .resource-grid {
   display: grid;
@@ -233,10 +234,12 @@ figcaption {
   margin-top: 30px;
 }
 
-.experiment-grid {
+.experiment-grid,
+.course-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.course-grid article,
 .experiment-grid article,
 .video-card,
 .resource-grid a {
@@ -245,16 +248,28 @@ figcaption {
   background: var(--panel);
 }
 
+.course-grid article,
 .experiment-grid article {
   padding: 24px;
 }
 
+.course-grid span {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.course-grid h3,
 .experiment-grid h3,
 .video-card h3 {
   margin: 0 0 8px;
   font-size: 1.12rem;
 }
 
+.course-grid p,
 .experiment-grid p,
 .video-card p {
   margin: 0;
@@ -364,6 +379,7 @@ footer p {
   }
 
   .summary-band,
+  .course-grid,
   .experiment-grid,
   .resource-grid,
   .two-column {
