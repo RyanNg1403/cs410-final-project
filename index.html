@@ -31,7 +31,6 @@
         <a href="#experiments">Experiments</a>
         <a href="#videos">Rollouts</a>
         <a href="#results">Results</a>
-        <a href="#reproduction">Reproduction</a>
         <a href="#bibtex">BibTeX</a>
       </nav>
     </header>
@@ -139,8 +138,8 @@
         <p>
           This page is our CS410.Q21 final project deliverable. We summarise
           the method, walk through the experimental setup the authors propose,
-          show rollout videos from the QDax archive, and discuss the headline
-          results.
+          show rollout videos and plots from our reproduction work, and
+          discuss the headline results.
         </p>
       </section>
 
@@ -275,163 +274,122 @@
       <section id="videos" class="section" aria-labelledby="videos-h">
         <h2 id="videos-h">4. Rollout videos</h2>
         <p class="section-lede">
-          Representative agents drawn from the PBT-MAP-Elites archive across
-          three tasks. The cards tagged with explicit fitness and
-          behavior-descriptor values (<em>fit&hairsp;…</em>, <em>bd&hairsp;…</em>)
-          are individual archive cells from our reproduction runs — see the
-          <a href="#reproduction">reproduction manifest</a> below for their
-          provenance. The remaining cards are demonstration rollouts
-          unconnected to a specific archive cell. Filter by task family;
-          starting one video pauses the others.
+          Randomly sampled archive-cell rollouts from the two recoverable
+          team video archives: four Walker2d-Uni elites and four AntTrap
+          elites. Each card lists its source cell, fitness, and behavior
+          descriptor; the source mapping is recorded in
+          <a href="assets/random-rollouts-manifest.csv">the rollout manifest</a>.
+          Starting one video pauses the others.
         </p>
 
         <div class="segmented" role="group" aria-label="Filter videos">
           <button class="filter is-active" type="button" data-filter="all">All</button>
-          <button class="filter" type="button" data-filter="locomotion">Locomotion</button>
-          <button class="filter" type="button" data-filter="trap">Trap</button>
+          <button class="filter" type="button" data-filter="locomotion">Walker2d-Uni</button>
+          <button class="filter" type="button" data-filter="trap">AntTrap</button>
         </div>
 
         <div class="video-grid">
           <article class="video-card" data-category="locomotion">
             <div class="video-wrap">
-              <video controls preload="metadata" poster="assets/posters/halfcheetah-default.jpg">
-                <source src="assets/videos/halfcheetah-default.mp4" type="video/mp4">
+              <video controls preload="metadata" poster="assets/posters/walker2d-random-01.jpg">
+                <source src="assets/videos/walker2d-random-01.mp4" type="video/mp4">
               </video>
             </div>
             <div class="video-meta">
-              <p class="card-tag">HalfCheetah-Uni · baseline</p>
-              <h3>Forward locomotion gait</h3>
-              <p>Side-view rollout of a learned forward-running policy from the archive.</p>
+              <p class="card-tag">Walker2d-Uni · cell&nbsp;188 · fit&nbsp;1162 · bd&nbsp;(0.891,&nbsp;0.676)</p>
+              <h3>Random gait sample A</h3>
+              <p>A high-contact biped gait sampled from the Walker2d-Uni reproduction archive.</p>
             </div>
           </article>
 
           <article class="video-card" data-category="locomotion">
             <div class="video-wrap">
-              <video controls preload="metadata" poster="assets/posters/halfcheetah-descriptor.jpg">
-                <source src="assets/videos/halfcheetah-descriptor-0587.mp4" type="video/mp4">
+              <video controls preload="metadata" poster="assets/posters/walker2d-random-02.jpg">
+                <source src="assets/videos/walker2d-random-02.mp4" type="video/mp4">
               </video>
             </div>
             <div class="video-meta">
-              <p class="card-tag">HalfCheetah-Uni · descriptor 0.587</p>
-              <h3>Alternative archive gait</h3>
-              <p>A different cell in the descriptor archive — same task, different contact pattern.</p>
+              <p class="card-tag">Walker2d-Uni · cell&nbsp;48 · fit&nbsp;1096 · bd&nbsp;(0.522,&nbsp;0.752)</p>
+              <h3>Random gait sample B</h3>
+              <p>A mid-descriptor elite with a visibly different rhythm from the other sampled cells.</p>
             </div>
           </article>
 
           <article class="video-card" data-category="locomotion">
             <div class="video-wrap">
-              <video controls preload="metadata" poster="assets/posters/walker2d-archive-best.jpg">
-                <source src="assets/videos/walker2d-archive-best.mp4" type="video/mp4">
+              <video controls preload="metadata" poster="assets/posters/walker2d-random-03.jpg">
+                <source src="assets/videos/walker2d-random-03.mp4" type="video/mp4">
               </video>
             </div>
             <div class="video-meta">
-              <p class="card-tag">Walker2d-Uni · best elite · fit&nbsp;1383, bd&nbsp;(0.51,&nbsp;0.85)</p>
-              <h3>Highest-fitness biped gait</h3>
-              <p>The archive's top elite — a balanced bipedal gait with foot-contact descriptor (0.51,&nbsp;0.85).</p>
+              <p class="card-tag">Walker2d-Uni · cell&nbsp;274 · fit&nbsp;1161 · bd&nbsp;(0.510,&nbsp;0.932)</p>
+              <h3>Random gait sample C</h3>
+              <p>This elite sits near the high second-foot-contact region of the descriptor map.</p>
             </div>
           </article>
 
           <article class="video-card" data-category="locomotion">
             <div class="video-wrap">
-              <video controls preload="metadata" poster="assets/posters/walker2d-archive-gait-low.jpg">
-                <source src="assets/videos/walker2d-archive-gait-low.mp4" type="video/mp4">
+              <video controls preload="metadata" poster="assets/posters/walker2d-random-04.jpg">
+                <source src="assets/videos/walker2d-random-04.mp4" type="video/mp4">
               </video>
             </div>
             <div class="video-meta">
-              <p class="card-tag">Walker2d-Uni · cell idx&nbsp;52 · fit&nbsp;1206, bd&nbsp;(0.28,&nbsp;0.90)</p>
-              <h3>Low-contact gait variant</h3>
-              <p>A different cell of the descriptor archive — foot&nbsp;1 spends much less time in contact than the best elite, producing a visibly different gait.</p>
-            </div>
-          </article>
-
-          <article class="video-card" data-category="locomotion">
-            <div class="video-wrap">
-              <video controls preload="metadata" poster="assets/posters/walker2d-archive-gait-high.jpg">
-                <source src="assets/videos/walker2d-archive-gait-high.mp4" type="video/mp4">
-              </video>
-            </div>
-            <div class="video-meta">
-              <p class="card-tag">Walker2d-Uni · cell idx&nbsp;238 · fit&nbsp;1044, bd&nbsp;(1.00,&nbsp;0.65)</p>
-              <h3>High-contact gait variant</h3>
-              <p>Opposite corner of the descriptor space — foot&nbsp;1 is in contact nearly all the time. Lower fitness, but very different motor pattern.</p>
-            </div>
-          </article>
-
-          <article class="video-card wide" data-category="trap">
-            <div class="video-wrap">
-              <video controls preload="metadata" poster="assets/posters/rollout.jpg">
-                <source src="assets/videos/ant-rollout-oblique.mp4" type="video/mp4">
-              </video>
-            </div>
-            <div class="video-meta">
-              <p class="card-tag">Ant · oblique camera</p>
-              <h3>Long rollout in trap layout</h3>
-              <p>Oblique camera angle on a longer rollout through the trap environment.</p>
+              <p class="card-tag">Walker2d-Uni · cell&nbsp;110 · fit&nbsp;1299 · bd&nbsp;(0.824,&nbsp;0.355)</p>
+              <h3>Random gait sample D</h3>
+              <p>The highest-fitness Walker2d sample in this random set, with an asymmetric contact descriptor.</p>
             </div>
           </article>
 
           <article class="video-card" data-category="trap">
             <div class="video-wrap">
-              <video controls preload="metadata" poster="assets/posters/topdown.jpg">
-                <source src="assets/videos/trap-topdown-search.mp4" type="video/mp4">
+              <video controls preload="metadata" poster="assets/posters/anttrap-random-01.jpg">
+                <source src="assets/videos/anttrap-random-01.mp4" type="video/mp4">
               </video>
             </div>
             <div class="video-meta">
-              <p class="card-tag">Trap · top-down</p>
-              <h3>Searching around the obstacle</h3>
-              <p>Overhead trajectory of the agent probing the trap region.</p>
+              <p class="card-tag">AntTrap · cell&nbsp;48 · fit&nbsp;996 · bd&nbsp;(8.39,&nbsp;−7.82)</p>
+              <h3>Southern-side probe</h3>
+              <p>A sampled AntTrap elite that explores below the obstacle rather than driving straight into it.</p>
             </div>
           </article>
 
           <article class="video-card" data-category="trap">
             <div class="video-wrap">
-              <video controls preload="metadata" poster="assets/posters/topdown2.jpg">
-                <source src="assets/videos/trap-topdown-solved.mp4" type="video/mp4">
+              <video controls preload="metadata" poster="assets/posters/anttrap-random-02.jpg">
+                <source src="assets/videos/anttrap-random-02.mp4" type="video/mp4">
               </video>
             </div>
             <div class="video-meta">
-              <p class="card-tag">Trap · top-down</p>
-              <h3>Clearing the trap</h3>
-              <p>A shorter rollout where the agent commits to a direct path through.</p>
+              <p class="card-tag">AntTrap · cell&nbsp;279 · fit&nbsp;928 · bd&nbsp;(11.10,&nbsp;−7.04)</p>
+              <h3>Lower corridor variant</h3>
+              <p>Another randomly selected southern cell, preserved because MAP-Elites keeps distinct behaviors.</p>
             </div>
           </article>
 
           <article class="video-card" data-category="trap">
             <div class="video-wrap">
-              <video controls preload="metadata" poster="assets/posters/anttrap-escape-up.jpg">
-                <source src="assets/videos/anttrap-escape-up.mp4" type="video/mp4">
+              <video controls preload="metadata" poster="assets/posters/anttrap-random-03.jpg">
+                <source src="assets/videos/anttrap-random-03.mp4" type="video/mp4">
               </video>
             </div>
             <div class="video-meta">
-              <p class="card-tag">AntTrap · escape · fit&nbsp;1472, bd&nbsp;(30.0,&nbsp;+6.4)</p>
-              <h3>Trap escape, northern path</h3>
-              <p>The archive's best AntTrap elite. The agent skirts the obstacle to the upper side and reaches the maximum x distance — the goal MAP-Elites is designed to discover.</p>
+              <p class="card-tag">AntTrap · cell&nbsp;14 · fit&nbsp;1139 · bd&nbsp;(25.68,&nbsp;−5.68)</p>
+              <h3>Near-escape trajectory</h3>
+              <p>This elite reaches much farther in x while still taking the lower side of the trap.</p>
             </div>
           </article>
 
           <article class="video-card" data-category="trap">
             <div class="video-wrap">
-              <video controls preload="metadata" poster="assets/posters/anttrap-escape-down.jpg">
-                <source src="assets/videos/anttrap-escape-down.mp4" type="video/mp4">
+              <video controls preload="metadata" poster="assets/posters/anttrap-random-04.jpg">
+                <source src="assets/videos/anttrap-random-04.mp4" type="video/mp4">
               </video>
             </div>
             <div class="video-meta">
-              <p class="card-tag">AntTrap · escape · fit&nbsp;1418, bd&nbsp;(29.5,&nbsp;−8.0)</p>
-              <h3>Trap escape, southern path</h3>
-              <p>A second-best elite that escapes by the opposite side. Same task, mirrored solution — direct evidence that the archive preserves alternative escape strategies.</p>
-            </div>
-          </article>
-
-          <article class="video-card" data-category="trap">
-            <div class="video-wrap">
-              <video controls preload="metadata" poster="assets/posters/anttrap-stuck.jpg">
-                <source src="assets/videos/anttrap-stuck.mp4" type="video/mp4">
-              </video>
-            </div>
-            <div class="video-meta">
-              <p class="card-tag">AntTrap · stuck · fit&nbsp;379, bd&nbsp;(0.0,&nbsp;−8.0)</p>
-              <h3>The deceptive local optimum</h3>
-              <p>A low-fitness cell that never crossed the obstacle (final x&nbsp;=&nbsp;0). This is exactly the failure mode reward-only baselines collapse into — the archive keeps it on hand as evidence the search did probe the trap region.</p>
+              <p class="card-tag">AntTrap · cell&nbsp;261 · fit&nbsp;1109 · bd&nbsp;(10.54,&nbsp;+6.65)</p>
+              <h3>Northern-side variant</h3>
+              <p>A counterpart elite that moves through the upper side of the descriptor space.</p>
             </div>
           </article>
         </div>
@@ -441,170 +399,51 @@
       <section id="results" class="section" aria-labelledby="results-h">
         <h2 id="results-h">5. Results</h2>
         <p class="section-lede">
-          PBT-MAP-Elites improves QD score and archive coverage over a
-          population-based-training baseline that does not maintain a diversity
-          archive — in all five environments except HumanoidTrap, which the
-          paper flags as the exception to this ranking. Separately, the SAC
-          variant of PBT-MAP-Elites is the only method in the comparison
-          that solves HumanoidTrap on maximum fitness within the paper's
-          budget.
+          The paper figure previously shown here has been replaced with our
+          team plots. These are reproduction-scale runs, not the paper's full
+          benchmark, so they should be read as evidence from our implementation
+          work rather than as a replacement for the authors' reported numbers.
         </p>
 
-        <figure class="figure">
-          <img src="assets/results.png" alt="AntTrap repertoire snapshots showing fitness and adapted hyperparameters at four training time points.">
-          <figcaption>
-            <strong>Figure 3 (from the paper).</strong> Snapshots of the
-            PBT-MAP-Elites (TD3) repertoire on AntTrap at four training time
-            points. Top row: fitness per archive cell. Middle row: the
-            exploration-noise hyperparameter that PBT adapted per cell.
-            Bottom row: the discount factor <em>γ</em> per cell. The takeaway
-            the authors highlight from this figure is that PBT does
-            <em>not</em> learn a single global hyperparameter setting — it
-            learns locally-coherent maps of hyperparameters that change as
-            training progresses, increasing exploration when the agents need
-            to get around the trap and decreasing it once they have. The
-            figure is reproduced from Flajolet &amp; Pierrot (2023, Fig. 3).
-          </figcaption>
-        </figure>
-
-        <div class="prose">
-          <p>
-            The takeaway for the course is twofold. First, the diversity
-            pressure is not ornamental — it is what lets the population
-            escape the deceptive local optima that defeat reward-only search.
-            Second, evolving the hyperparameters jointly with the policies
-            (rather than fixing them up front) is what differentiates
-            PBT-MAP-Elites from prior RL-based MAP-Elites methods such as
-            PGA-MAP-Elites and QD-PG: those methods inherit a single
-            user-tuned hyperparameter set and pay for it on environments
-            (notably HumanoidTrap) where the right amount of exploration
-            shifts over training.
-          </p>
-        </div>
-      </section>
-
-      <!-- ───── REPRODUCTION ───── -->
-      <section id="reproduction" class="section" aria-labelledby="repro-h">
-        <h2 id="repro-h">6. Our reproduction</h2>
-        <p class="section-lede">
-          What the team actually ran. The archive videos elsewhere on this
-          page were taken from these runs.
-        </p>
-
-        <div class="prose">
-          <p>
-            We trained PBT-MAP-Elites on two of the paper's five environments
-            using the upstream
-            <a href="https://github.com/adaptive-intelligent-robotics/QDax">QDax</a>
-            implementation. The third zip file the team produced
-            (<code>halfcheetah_s0.zip</code>, intended HalfCheetah-Uni
-            reproduction) and a fourth (<code>ant_uni_s3.zip</code>,
-            intended Ant-Uni reproduction) were corrupted at upload time
-            (missing the ZIP central-directory record on Drive itself, so
-            unrecoverable from our end). Those two environments are
-            therefore not represented in our archive videos. The runs that
-            <em>did</em> complete are:
-          </p>
-        </div>
-
-        <div class="repro-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Environment</th>
-                <th>Algorithm</th>
-                <th>Seed</th>
-                <th>Archive size</th>
-                <th>Cells filled</th>
-                <th>Training budget</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Walker2d-Uni</td>
-                <td>PBT-MAP-Elites (SAC)</td>
-                <td>2</td>
-                <td>512&nbsp;(CVT)</td>
-                <td>250</td>
-                <td>200 loops &times; 10&nbsp;000 env-steps = 2 M env-steps; net&nbsp;arch&nbsp;2&times;256</td>
-              </tr>
-              <tr>
-                <td>AntTrap</td>
-                <td>PBT-MAP-Elites&nbsp;<small>(variant not recorded in filename)</small></td>
-                <td>0</td>
-                <td>not&nbsp;recorded</td>
-                <td>420</td>
-                <td>not&nbsp;recorded</td>
-              </tr>
-            </tbody>
-          </table>
-          <p class="repro-note">
-            The Walker2d row is read off the QDax notebook output directory
-            name:
-            <code>me_sac_pbt_walker2d_uni_s2_c512_h256_pg10_ga30_loops200_train10000</code>
-            — algorithm (<code>me_sac_pbt</code>), env, seed
-            (<code>s2</code>), centroids (<code>c512</code>), hidden width
-            (<code>h256</code>), policy-gradient steps per loop
-            (<code>pg10</code>), variation iterations per loop
-            (<code>ga30</code>), outer loops (<code>loops200</code>), and
-            env-steps per loop (<code>train10000</code>). The AntTrap zip
-            was flattened to a single directory before upload, so only the
-            seed survives in the artifact metadata.
-          </p>
+        <div class="plot-grid">
+          <figure class="plot-card wide">
+            <img src="assets/plots/training_curves_anttrap.png" alt="Team reproduction training curves on AntTrap for QD score, maximum fitness, and coverage.">
+            <figcaption><strong>AntTrap curves.</strong> The deceptive task is where the diversity archive matters most: PBT-MAP-Elites and PGA-MAP-Elites keep broad coverage while improving archive quality.</figcaption>
+          </figure>
+          <figure class="plot-card wide">
+            <img src="assets/plots/training_curves_walker2d_uni.png" alt="Team reproduction training curves on Walker2d-Uni for QD score, maximum fitness, and coverage.">
+            <figcaption><strong>Walker2d-Uni curves.</strong> A locomotion run where descriptor coverage tracks whether the method keeps multiple bipedal contact patterns, not just one fast gait.</figcaption>
+          </figure>
+          <figure class="plot-card">
+            <img src="assets/plots/training_curves_halfcheetah_uni.png" alt="Team reproduction training curves on HalfCheetah-Uni.">
+            <figcaption><strong>HalfCheetah-Uni curves.</strong> Forward locomotion is easier to optimize; the QD metrics show whether the archive also covers gait diversity.</figcaption>
+          </figure>
+          <figure class="plot-card">
+            <img src="assets/plots/training_curves_ant_uni.png" alt="Team reproduction training curves on Ant-Uni.">
+            <figcaption><strong>Ant-Uni curves.</strong> A higher-dimensional locomotion check using the same QD metrics.</figcaption>
+          </figure>
+          <figure class="plot-card wide">
+            <img src="assets/plots/repertoires_comparison_anttrap_v2.jpg" alt="Team reproduction final AntTrap repertoire comparison across methods.">
+            <figcaption><strong>AntTrap final repertoires.</strong> Filled cells show which final-position descriptors were discovered; the trap geometry is visible as the methods spread through the x-y descriptor space.</figcaption>
+          </figure>
+          <figure class="plot-card">
+            <img src="assets/plots/repertoires_comparison_walker2d_uni_v2.jpg" alt="Team reproduction final Walker2d-Uni repertoire comparison across methods.">
+            <figcaption><strong>Walker2d-Uni final repertoires.</strong> Each occupied cell corresponds to a foot-contact descriptor.</figcaption>
+          </figure>
+          <figure class="plot-card">
+            <img src="assets/plots/repertoires_comparison_halfcheetah_uni_v2.jpg" alt="Team reproduction final HalfCheetah-Uni repertoire comparison across methods.">
+            <figcaption><strong>HalfCheetah-Uni final repertoires.</strong> The archive separates alternative running patterns in descriptor space.</figcaption>
+          </figure>
         </div>
 
         <div class="prose">
           <p>
-            For provenance of the individual archive-cell rollouts shown in
-            §&nbsp;4, see
-            <a href="assets/rollouts-manifest.csv"><code>assets/rollouts-manifest.csv</code></a>
-            — it maps each MP4 on this page to its source archive cell
-            (fitness, behavior descriptor, cell index, original filename).
+            The takeaway for the course is that the archive is doing real
+            work. Max fitness alone says whether one policy got fast; QD score
+            and coverage show whether the method found a repertoire of
+            behaviorally different elites.
           </p>
         </div>
-      </section>
-
-      <!-- ───── RESOURCES ───── -->
-      <section id="resources" class="section" aria-labelledby="res-h">
-        <h2 id="res-h">7. Resources</h2>
-
-        <ul class="resource-list">
-          <li>
-            <a href="https://github.com/adaptive-intelligent-robotics/QDax">
-              <span class="r-tag">Code</span>
-              <span class="r-title">adaptive-intelligent-robotics / QDax</span>
-              <span class="r-arrow" aria-hidden="true">↗</span>
-            </a>
-          </li>
-          <li>
-            <a href="https://openreview.net/forum?id=CBfYffLqWqb">
-              <span class="r-tag">Paper page</span>
-              <span class="r-title">OpenReview — ICLR 2023</span>
-              <span class="r-arrow" aria-hidden="true">↗</span>
-            </a>
-          </li>
-          <li>
-            <a href="https://github.com/adaptive-intelligent-robotics/QDax/blob/main/examples/me_sac_pbt.ipynb">
-              <span class="r-tag">Notebook</span>
-              <span class="r-title">ME-PBT with SAC</span>
-              <span class="r-arrow" aria-hidden="true">↗</span>
-            </a>
-          </li>
-          <li>
-            <a href="https://github.com/adaptive-intelligent-robotics/QDax/blob/main/examples/me_td3_pbt.ipynb">
-              <span class="r-tag">Notebook</span>
-              <span class="r-title">ME-PBT with TD3</span>
-              <span class="r-arrow" aria-hidden="true">↗</span>
-            </a>
-          </li>
-          <li>
-            <a href="6235_evolving_populations_of_divers.pdf">
-              <span class="r-tag">PDF</span>
-              <span class="r-title">Local copy of the paper</span>
-              <span class="r-arrow" aria-hidden="true">↗</span>
-            </a>
-          </li>
-        </ul>
       </section>
 
       <!-- ───── BIBTEX ───── -->
@@ -640,7 +479,7 @@
     <footer class="site-footer">
       <div>
         <p class="foot-brand">CS410.Q21 — UIT</p>
-        <p class="foot-sub">Final project page. Paper figures © Flajolet &amp; Pierrot, ICLR 2023; rollout videos by the project team.</p>
+        <p class="foot-sub">Final project page. Paper figures © Flajolet &amp; Pierrot, ICLR 2023; reproduction plots and rollout videos by the project team.</p>
       </div>
       <p class="colophon">
         Set in <em>Castoro</em> &amp; <em>Noto Sans</em>.

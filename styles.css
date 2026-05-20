@@ -26,7 +26,7 @@
 
   /* layout */
   --measure: 760px;            /* main reading column */
-  --measure-wide: var(--measure); /* figures, videos, and card grids are kept to the text column */
+  --measure-wide: 1120px;      /* media and result grids */
   --pad-x: clamp(20px, 5vw, 56px);
 
   /* motion */
@@ -430,6 +430,35 @@ a:hover {
   margin-top: 32px;
 }
 
+/* ── team plots ─────────────────────────────────────────── */
+.plot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(18px, 2vw, 28px);
+  max-width: var(--measure-wide);
+  margin: 32px auto 0;
+}
+.plot-card {
+  margin: 0;
+  border: 1px solid var(--rule);
+  background: var(--bg);
+}
+.plot-card.wide { grid-column: span 2; }
+.plot-card img {
+  width: 100%;
+  background: #fff;
+}
+.plot-card figcaption {
+  padding: 12px 14px 14px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.plot-card figcaption strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
 /* ── video gallery ──────────────────────────────────────── */
 .segmented {
   display: inline-flex;
@@ -470,7 +499,7 @@ a:hover {
 
 .video-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(20px, 2.5vw, 32px);
   max-width: var(--measure-wide);
   margin: 0 auto;
@@ -483,6 +512,12 @@ a:hover {
   gap: 14px;
 }
 .video-card.is-hidden { display: none; }
+
+.video-meta .card-tag {
+  letter-spacing: 0.02em;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
 
 .video-wrap {
   position: relative;
@@ -715,6 +750,11 @@ a:hover {
     grid-template-columns: 1fr;
   }
   .video-card.wide { grid-column: auto; }
+
+  .plot-grid {
+    grid-template-columns: 1fr;
+  }
+  .plot-card.wide { grid-column: auto; }
 
   .resource-list a {
     grid-template-columns: 1fr auto;
