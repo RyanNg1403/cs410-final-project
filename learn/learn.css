@@ -204,6 +204,7 @@ h1.title {
 
 .article > * {
   grid-column: 2;
+  align-self: start;
 }
 
 /* Diagrams that sit in the right margin */
