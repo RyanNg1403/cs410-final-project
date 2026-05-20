@@ -1,9 +1,17 @@
-page_video,environment,algorithm,idx,seed,fit,bd1,bd2,source_filename
-walker2d-random-01.mp4,Walker2d-Uni,PBT-MAP-Elites (SAC),188,8,1161.941162,0.8910,0.6760,me_sac_pbt_walker2d_uni_s2_c512_h256_pg10_ga30_loops200_train10000/walker2d_uni_idx188_seed8_fit1161.941162_bd0.8910_0.6760.mp4
-walker2d-random-02.mp4,Walker2d-Uni,PBT-MAP-Elites (SAC),48,5,1095.535889,0.5220,0.7520,me_sac_pbt_walker2d_uni_s2_c512_h256_pg10_ga30_loops200_train10000/walker2d_uni_idx48_seed5_fit1095.535889_bd0.5220_0.7520.mp4
-walker2d-random-03.mp4,Walker2d-Uni,PBT-MAP-Elites (SAC),274,1,1161.491333,0.5100,0.9320,me_sac_pbt_walker2d_uni_s2_c512_h256_pg10_ga30_loops200_train10000/walker2d_uni_idx274_seed1_fit1161.491333_bd0.5100_0.9320.mp4
-walker2d-random-04.mp4,Walker2d-Uni,PBT-MAP-Elites (SAC),110,6,1299.155273,0.8240,0.3550,me_sac_pbt_walker2d_uni_s2_c512_h256_pg10_ga30_loops200_train10000/walker2d_uni_idx110_seed6_fit1299.155273_bd0.8240_0.3550.mp4
-anttrap-random-01.mp4,AntTrap,PBT-MAP-Elites,48,22,996.253967,8.3904,-7.8182,anttrap_s0/anttrap_idx48_seed22_fit996.253967_bd8.3904_-7.8182.mp4
-anttrap-random-02.mp4,AntTrap,PBT-MAP-Elites,279,26,928.323059,11.0960,-7.0354,anttrap_s0/anttrap_idx279_seed26_fit928.323059_bd11.0960_-7.0354.mp4
-anttrap-random-03.mp4,AntTrap,PBT-MAP-Elites,14,16,1138.952759,25.6840,-5.6816,anttrap_s0/anttrap_idx14_seed16_fit1138.952759_bd25.6840_-5.6816.mp4
-anttrap-random-04.mp4,AntTrap,PBT-MAP-Elites,261,2,1109.039551,10.5393,6.6518,anttrap_s0/anttrap_idx261_seed2_fit1109.039551_bd10.5393_6.6518.mp4
+page_video,environment,algorithm,idx,seed,fit,bd1,bd2,bd3,bd4,source_filename
+walker2d-random-01.mp4,Walker2d-Uni,PBT-MAP-Elites (SAC),188,8,1161.941162,0.8910,0.6760,,,me_sac_pbt_walker2d_uni_s2_c512_h256_pg10_ga30_loops200_train10000/walker2d_uni_idx188_seed8_fit1161.941162_bd0.8910_0.6760.mp4
+walker2d-random-02.mp4,Walker2d-Uni,PBT-MAP-Elites (SAC),48,5,1095.535889,0.5220,0.7520,,,me_sac_pbt_walker2d_uni_s2_c512_h256_pg10_ga30_loops200_train10000/walker2d_uni_idx48_seed5_fit1095.535889_bd0.5220_0.7520.mp4
+walker2d-random-03.mp4,Walker2d-Uni,PBT-MAP-Elites (SAC),274,1,1161.491333,0.5100,0.9320,,,me_sac_pbt_walker2d_uni_s2_c512_h256_pg10_ga30_loops200_train10000/walker2d_uni_idx274_seed1_fit1161.491333_bd0.5100_0.9320.mp4
+walker2d-random-04.mp4,Walker2d-Uni,PBT-MAP-Elites (SAC),110,6,1299.155273,0.8240,0.3550,,,me_sac_pbt_walker2d_uni_s2_c512_h256_pg10_ga30_loops200_train10000/walker2d_uni_idx110_seed6_fit1299.155273_bd0.8240_0.3550.mp4
+anttrap-random-01.mp4,AntTrap,PBT-MAP-Elites,48,22,996.253967,8.3904,-7.8182,,,anttrap_s0/anttrap_idx48_seed22_fit996.253967_bd8.3904_-7.8182.mp4
+anttrap-random-02.mp4,AntTrap,PBT-MAP-Elites,279,26,928.323059,11.0960,-7.0354,,,anttrap_s0/anttrap_idx279_seed26_fit928.323059_bd11.0960_-7.0354.mp4
+anttrap-random-03.mp4,AntTrap,PBT-MAP-Elites,14,16,1138.952759,25.6840,-5.6816,,,anttrap_s0/anttrap_idx14_seed16_fit1138.952759_bd25.6840_-5.6816.mp4
+anttrap-random-04.mp4,AntTrap,PBT-MAP-Elites,261,2,1109.039551,10.5393,6.6518,,,anttrap_s0/anttrap_idx261_seed2_fit1109.039551_bd10.5393_6.6518.mp4
+antuni-random-01.mp4,Ant-Uni,PBT-MAP-Elites,12,3,2131.698730,0.2520,0.4120,0.3040,0.5890,ant_uni_s3/ant_uni_idx12_seed3_fit2131.698730_bd0.2520_0.4120_0.3040_0.5890.mp4
+antuni-random-02.mp4,Ant-Uni,PBT-MAP-Elites,25,2,3056.674072,0.2210,0.5670,0.4400,0.2520,ant_uni_s3/ant_uni_idx25_seed2_fit3056.674072_bd0.2210_0.5670_0.4400_0.2520.mp4
+antuni-random-03.mp4,Ant-Uni,PBT-MAP-Elites,42,4,3955.135010,0.1840,0.4430,0.2530,0.1790,ant_uni_s3/ant_uni_idx42_seed4_fit3955.135010_bd0.1840_0.4430_0.2530_0.1790.mp4
+antuni-random-04.mp4,Ant-Uni,PBT-MAP-Elites,46,0,1512.328857,0.5900,0.4510,0.4410,0.4910,ant_uni_s3/ant_uni_idx46_seed0_fit1512.328857_bd0.5900_0.4510_0.4410_0.4910.mp4
+halfcheetah-random-01.mp4,HalfCheetah-Uni,PBT-MAP-Elites,10,0,1829.973999,0.5740,0.3960,,,halfcheetah_uni_s0/halfcheetah_uni_idx10_seed0_fit1829.973999_bd0.5740_0.3960.mp4
+halfcheetah-random-02.mp4,HalfCheetah-Uni,PBT-MAP-Elites,21,1,1338.718750,0.6180,0.9090,,,halfcheetah_uni_s0/halfcheetah_uni_idx21_seed1_fit1338.718750_bd0.6180_0.9090.mp4
+halfcheetah-random-03.mp4,HalfCheetah-Uni,PBT-MAP-Elites,45,2,2230.859131,0.2920,0.3030,,,halfcheetah_uni_s0/halfcheetah_uni_idx45_seed2_fit2230.859131_bd0.2920_0.3030.mp4
+halfcheetah-random-04.mp4,HalfCheetah-Uni,PBT-MAP-Elites,64,1,4984.994141,0.3620,0.4360,,,halfcheetah_uni_s0/halfcheetah_uni_idx64_seed1_fit4984.994141_bd0.3620_0.4360.mp4

@@ -274,21 +274,75 @@
       <section id="videos" class="section" aria-labelledby="videos-h">
         <h2 id="videos-h">4. Rollout videos</h2>
         <p class="section-lede">
-          Randomly sampled archive-cell rollouts from the two recoverable
-          team video archives: four Walker2d-Uni elites and four AntTrap
-          elites. Each card lists its source cell, fitness, and behavior
-          descriptor; the source mapping is recorded in
+          Randomly sampled archive-cell rollouts from the four team video
+          folders: HalfCheetah-Uni, Walker2d-Uni, Ant-Uni, and AntTrap. Each
+          card lists its source cell, fitness, and behavior descriptor; the
+          source mapping is recorded in
           <a href="assets/random-rollouts-manifest.csv">the rollout manifest</a>.
           Starting one video pauses the others.
         </p>
 
         <div class="segmented" role="group" aria-label="Filter videos">
           <button class="filter is-active" type="button" data-filter="all">All</button>
+          <button class="filter" type="button" data-filter="halfcheetah">HalfCheetah-Uni</button>
           <button class="filter" type="button" data-filter="locomotion">Walker2d-Uni</button>
+          <button class="filter" type="button" data-filter="antuni">Ant-Uni</button>
           <button class="filter" type="button" data-filter="trap">AntTrap</button>
         </div>
 
         <div class="video-grid">
+          <article class="video-card" data-category="halfcheetah">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/halfcheetah-random-01.jpg">
+                <source src="assets/videos/halfcheetah-random-01.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">HalfCheetah-Uni · cell&nbsp;10 · fit&nbsp;1830 · bd&nbsp;(0.574,&nbsp;0.396)</p>
+              <h3>Archive gait sample A</h3>
+              <p>A randomly selected elite from the HalfCheetah-Uni descriptor archive.</p>
+            </div>
+          </article>
+
+          <article class="video-card" data-category="halfcheetah">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/halfcheetah-random-02.jpg">
+                <source src="assets/videos/halfcheetah-random-02.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">HalfCheetah-Uni · cell&nbsp;21 · fit&nbsp;1339 · bd&nbsp;(0.618,&nbsp;0.909)</p>
+              <h3>Archive gait sample B</h3>
+              <p>A second cell with a different gait descriptor and lower fitness.</p>
+            </div>
+          </article>
+
+          <article class="video-card" data-category="halfcheetah">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/halfcheetah-random-03.jpg">
+                <source src="assets/videos/halfcheetah-random-03.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">HalfCheetah-Uni · cell&nbsp;45 · fit&nbsp;2231 · bd&nbsp;(0.292,&nbsp;0.303)</p>
+              <h3>Archive gait sample C</h3>
+              <p>A faster gait from another region of the descriptor grid.</p>
+            </div>
+          </article>
+
+          <article class="video-card" data-category="halfcheetah">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/halfcheetah-random-04.jpg">
+                <source src="assets/videos/halfcheetah-random-04.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">HalfCheetah-Uni · cell&nbsp;64 · fit&nbsp;4985 · bd&nbsp;(0.362,&nbsp;0.436)</p>
+              <h3>Archive gait sample D</h3>
+              <p>The strongest HalfCheetah-Uni sample in this set.</p>
+            </div>
+          </article>
+
           <article class="video-card" data-category="locomotion">
             <div class="video-wrap">
               <video controls preload="metadata" poster="assets/posters/walker2d-random-01.jpg">
@@ -338,6 +392,58 @@
               <p class="card-tag">Walker2d-Uni · cell&nbsp;110 · fit&nbsp;1299 · bd&nbsp;(0.824,&nbsp;0.355)</p>
               <h3>Random gait sample D</h3>
               <p>The highest-fitness Walker2d sample in this random set, with an asymmetric contact descriptor.</p>
+            </div>
+          </article>
+
+          <article class="video-card" data-category="antuni">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/antuni-random-01.jpg">
+                <source src="assets/videos/antuni-random-01.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">Ant-Uni · cell&nbsp;12 · fit&nbsp;2132 · bd&nbsp;(0.252,&nbsp;0.412,&nbsp;0.304,&nbsp;0.589)</p>
+              <h3>Quadruped gait sample A</h3>
+              <p>A sampled Ant-Uni elite with a four-dimensional foot-contact descriptor.</p>
+            </div>
+          </article>
+
+          <article class="video-card" data-category="antuni">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/antuni-random-02.jpg">
+                <source src="assets/videos/antuni-random-02.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">Ant-Uni · cell&nbsp;25 · fit&nbsp;3057 · bd&nbsp;(0.221,&nbsp;0.567,&nbsp;0.440,&nbsp;0.252)</p>
+              <h3>Quadruped gait sample B</h3>
+              <p>A higher-fitness Ant-Uni gait with a distinct contact pattern.</p>
+            </div>
+          </article>
+
+          <article class="video-card" data-category="antuni">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/antuni-random-03.jpg">
+                <source src="assets/videos/antuni-random-03.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">Ant-Uni · cell&nbsp;42 · fit&nbsp;3955 · bd&nbsp;(0.184,&nbsp;0.443,&nbsp;0.253,&nbsp;0.179)</p>
+              <h3>Quadruped gait sample C</h3>
+              <p>The strongest Ant-Uni sample in this set.</p>
+            </div>
+          </article>
+
+          <article class="video-card" data-category="antuni">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/antuni-random-04.jpg">
+                <source src="assets/videos/antuni-random-04.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">Ant-Uni · cell&nbsp;46 · fit&nbsp;1512 · bd&nbsp;(0.590,&nbsp;0.451,&nbsp;0.441,&nbsp;0.491)</p>
+              <h3>Quadruped gait sample D</h3>
+              <p>A lower-fitness but behaviorally distinct elite preserved by the archive.</p>
             </div>
           </article>
 
