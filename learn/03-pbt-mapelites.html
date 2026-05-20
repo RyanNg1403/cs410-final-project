@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>3. PBT-MAP-Elites — the paper's contribution</title>
+    <meta name="description" content="How PBT-MAP-Elites braids population-based training with MAP-Elites, what gets evolved, and why it solves HumanoidTrap.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Castoro:ital@0;1&family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="learn.css">
+  </head>
+  <body>
+
+    <header class="learn-header">
+      <a class="brand" href="../index.html"><span>CS410.Q21</span><span class="brand-divider">·</span><span>Explainer</span></a>
+      <nav class="crumbs" aria-label="Pages">
+        <a href="01-quality-diversity.html"><span class="step-num">01</span>Primitives</a>
+        <a href="02-rl-meets-mapelites.html"><span class="step-num">02</span>Lineage</a>
+        <a href="03-pbt-mapelites.html" class="is-current"><span class="step-num">03</span>PBT-MAP-Elites</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow"><span class="part-num">03</span>The contribution</p>
+      <h1 class="title">Evolve the agent, not the policy.</h1>
+      <p class="subtitle">
+        PBT-MAP-Elites is two algorithms you already know — MAP-Elites and Population-Based
+        Training — locked together by one careful design decision. This page is about that
+        decision, the algorithm it makes possible, and the result it delivers on the hardest
+        environment in the benchmark.
+      </p>
+      <div class="hero-meta">
+        <div><strong>Read time</strong>12 minutes</div>
+        <div><strong>You will learn</strong>Agent as bundle · The two-loop training · Hyperparameter maps · The HumanoidTrap result</div>
+        <div><strong>Builds on</strong>Parts 01 &amp; 02</div>
+      </div>
+    </section>
+
+    <main class="article">
+
+      <h2><span class="h2-num">3.1</span> The one design decision</h2>
+
+      <p>
+        Every algorithm in Part 02 evolved the same thing: a policy <span class="tex">π<sub>θ</sub></span>.
+        That meant <em>just the actor's weights</em>. Everything else — critic, replay buffer,
+        hyperparameters — lived outside the variation operator. The critic and buffer were
+        global; the hyperparameters were a user-tuned configuration that didn't change after
+        launch.
+      </p>
+
+      <p>
+        PBT-MAP-Elites makes one change. It promotes the entire bundle of stateful pieces that
+        define an RL agent into the object that gets evolved. An agent is no longer just
+        <span class="tex">π<sub>θ</sub></span>. An agent is a triple:
+      </p>
+
+      <div class="equation">
+        agent &nbsp; = &nbsp; ( &nbsp; <span class="tex">θ</span> &nbsp;,&nbsp; <span class="tex">φ</span> &nbsp;,&nbsp; <span class="tex">h</span> &nbsp; )
+      </div>
+
+      <p>
+        The pieces:
+      </p>
+
+      <ul>
+        <li><strong><span class="tex">θ</span> — policy parameters.</strong> The actor's neural-network weights. The thing every previous method already evolved.</li>
+        <li><strong><span class="tex">φ</span> — other learnable parameters.</strong> Critic weights, target-network weights, optimizer state, replay buffer, anything that learns alongside the policy.</li>
+        <li><strong><span class="tex">h</span> — hyperparameters.</strong> Learning rate, exploration noise, discount factor, target-update rate. The dials that used to be fixed at launch.</li>
+      </ul>
+
+      <div class="margin-fig">
+        <figure class="figure">
+          <svg viewBox="0 0 240 280" role="img" aria-label="An agent shown as a stack of three labeled boxes: policy theta, learnable parameters phi (with critic, buffer, optimizer), and hyperparameters h.">
+            <rect x="0" y="0" width="240" height="280" fill="none"/>
+            <text x="120" y="22" text-anchor="middle" class="dg-label-mono">one agent in PBT-MAP-Elites</text>
+
+            <!-- Theta -->
+            <g transform="translate(40,40)">
+              <rect x="0" y="0" width="160" height="50" fill="#fbfaf6" stroke="#b94a23" stroke-width="1.6"/>
+              <text x="14" y="22" class="dg-label-mono" fill="#b94a23">θ</text>
+              <text x="14" y="40" class="dg-label-italic">policy weights</text>
+              <text x="100" y="40" class="dg-label-mono dg-label-mute" text-anchor="end">~10⁵ params</text>
+            </g>
+
+            <!-- Phi -->
+            <g transform="translate(40,100)">
+              <rect x="0" y="0" width="160" height="80" fill="#fbfaf6" stroke="#0f5b54" stroke-width="1.6"/>
+              <text x="14" y="22" class="dg-label-mono" fill="#0f5b54">φ</text>
+              <text x="14" y="40" class="dg-label-italic">other learnable params</text>
+              <text x="20" y="58" class="dg-label-mono dg-label-mute">• critic Q(s, a)</text>
+              <text x="20" y="72" class="dg-label-mono dg-label-mute">• replay buffer</text>
+            </g>
+
+            <!-- h -->
+            <g transform="translate(40,190)">
+              <rect x="0" y="0" width="160" height="80" fill="#fbfaf6" stroke="#c08a14" stroke-width="1.6"/>
+              <text x="14" y="22" class="dg-label-mono" fill="#c08a14">h</text>
+              <text x="14" y="40" class="dg-label-italic">hyperparameters</text>
+              <text x="20" y="58" class="dg-label-mono dg-label-mute">• lr · noise · γ ·</text>
+              <text x="20" y="72" class="dg-label-mono dg-label-mute">  target update rate</text>
+            </g>
+          </svg>
+          <figcaption><strong>Fig. 10</strong>The bundle that PBT-MAP-Elites promotes to first-class citizen. Every previous method's "agent" was just the orange box at the top.</figcaption>
+        </figure>
+      </div>
+
+      <p>
+        It is the smallest possible-sounding change. It is also load-bearing for everything that
+        follows. Bundling <span class="tex">φ</span> into the agent removes the shared-critic
+        bottleneck — each agent now carries its own. Bundling <span class="tex">h</span>
+        into the agent makes hyperparameters something the algorithm can <em>evolve</em>, not
+        just a thing the user supplies. And once an agent is a single self-contained object,
+        PBT can copy, mutate, and insert it without caring what the inner RL algorithm is. SAC,
+        TD3, anything else — the outer loop doesn't look inside the bundle.
+      </p>
+
+      <div class="callout">
+        <span class="label">Why this fixes downside (iv)</span>
+        <p>
+          PGA-MAP-Elites and QD-PG were tied to TD3 because TD3's critic and replay buffer were
+          structural commitments of the outer algorithm — you couldn't swap TD3 for SAC without
+          rewriting both. In PBT-MAP-Elites the inner RL algorithm is a function call on the
+          agent bundle. Swapping SAC for TD3 changes only what's inside <span class="tex">φ</span>;
+          the algorithm around it is identical. The paper exploits this directly: it reports
+          results for both PBT-MAP-Elites (SAC) and PBT-MAP-Elites (TD3) and treats the comparison
+          as informative, not as a confound.
+        </p>
+      </div>
+
+      <h2><span class="h2-num">3.2</span> Two loops, intertwined</h2>
+
+      <p>
+        With the agent defined, the algorithm proper is two interlocking loops. Both inherit from
+        algorithms you already know, and neither does anything you haven't seen — but their
+        composition is what the paper claims as novel.
+      </p>
+
+      <div class="wide-fig">
+        <figure class="figure">
+          <svg viewBox="0 0 880 460" role="img" aria-label="Diagram of the PBT-MAP-Elites training loop: a population of agents on the left, a MAP-Elites repertoire on the right, with arrows showing population update and repertoire update.">
+            <rect x="0" y="0" width="880" height="460" fill="none"/>
+            <text x="440" y="28" text-anchor="middle" class="dg-label-mono">one iteration of PBT-MAP-Elites</text>
+
+            <!-- LEFT: population of P agents -->
+            <text x="170" y="60" text-anchor="middle" class="dg-label-italic">population of P agents</text>
+            <text x="170" y="78" text-anchor="middle" class="dg-label-mono dg-label-mute">trained in parallel</text>
+            <g transform="translate(60,100)">
+              <!-- agent 1 -->
+              <g transform="translate(0,0)">
+                <rect x="0"  y="0"  width="100" height="10" fill="#b94a23"/>
+                <rect x="0"  y="10" width="100" height="22" fill="#dbe6e3" stroke="#0f5b54"/>
+                <rect x="0"  y="32" width="100" height="14" fill="#fbfaf6" stroke="#c08a14"/>
+                <text x="106" y="28" class="dg-label-mono dg-label-mute">agent₁</text>
+              </g>
+              <g transform="translate(0,60)">
+                <rect x="0"  y="0"  width="100" height="10" fill="#b94a23"/>
+                <rect x="0"  y="10" width="100" height="22" fill="#dbe6e3" stroke="#0f5b54"/>
+                <rect x="0"  y="32" width="100" height="14" fill="#fbfaf6" stroke="#c08a14"/>
+                <text x="106" y="28" class="dg-label-mono dg-label-mute">agent₂</text>
+              </g>
+              <g transform="translate(0,120)">
+                <rect x="0"  y="0"  width="100" height="10" fill="#b94a23"/>
+                <rect x="0"  y="10" width="100" height="22" fill="#dbe6e3" stroke="#0f5b54"/>
+                <rect x="0"  y="32" width="100" height="14" fill="#fbfaf6" stroke="#c08a14"/>
+                <text x="106" y="28" class="dg-label-mono dg-label-mute">agent₃</text>
+              </g>
+              <text x="50" y="200" text-anchor="middle" class="dg-label-italic dg-label-mute">…</text>
+              <g transform="translate(0,220)">
+                <rect x="0"  y="0"  width="100" height="10" fill="#b94a23"/>
+                <rect x="0"  y="10" width="100" height="22" fill="#dbe6e3" stroke="#0f5b54"/>
+                <rect x="0"  y="32" width="100" height="14" fill="#fbfaf6" stroke="#c08a14"/>
+                <text x="106" y="28" class="dg-label-mono dg-label-mute">agentₚ</text>
+              </g>
+            </g>
+
+            <!-- middle: arrows showing population update and repertoire update -->
+            <!-- arrows from population to repertoire -->
+            <g stroke="#0f5b54" fill="none" stroke-width="1.4">
+              <path d="M 240 130 C 320 130, 380 160, 460 180"/>
+              <path d="M 240 190 C 320 190, 380 200, 460 210"/>
+              <path d="M 240 250 C 320 250, 380 240, 460 240"/>
+              <path d="M 240 350 C 320 340, 380 320, 460 290"/>
+            </g>
+            <polygon points="460,180 450,176 450,184" class="dg-fill-teal"/>
+            <polygon points="460,210 450,206 450,214" class="dg-fill-teal"/>
+            <polygon points="460,240 450,236 450,244" class="dg-fill-teal"/>
+            <polygon points="460,290 450,286 450,294" class="dg-fill-teal"/>
+            <text x="350" y="148" class="dg-label-italic" fill="#0f5b54">evaluate &amp; insert</text>
+            <text x="350" y="164" class="dg-label-mono dg-label-mute">(repertoire update)</text>
+
+            <!-- arrows from repertoire back to population -->
+            <g stroke="#b94a23" fill="none" stroke-width="1.4" stroke-dasharray="4 3">
+              <path d="M 580 360 C 460 380, 350 360, 240 360"/>
+            </g>
+            <polygon points="240,360 252,355 252,365" class="dg-fill-link"/>
+            <text x="400" y="402" class="dg-label-italic" fill="#b94a23">rank · replace weakest from strongest</text>
+            <text x="400" y="418" class="dg-label-mono dg-label-mute">(population update — also re-samples hyperparams)</text>
+
+            <!-- RIGHT: repertoire grid -->
+            <text x="680" y="60" text-anchor="middle" class="dg-label-italic">MAP-Elites repertoire</text>
+            <text x="680" y="78" text-anchor="middle" class="dg-label-mono dg-label-mute">archive of behaviorally-distinct elites</text>
+            <g transform="translate(560,110)">
+              <g class="dg-grid">
+                <rect x="0"   y="0"   width="36" height="36" fill="#ffffff"/>
+                <rect x="36"  y="0"   width="36" height="36" fill="#bcd2cf"/>
+                <rect x="72"  y="0"   width="36" height="36" fill="#4a8a83"/>
+                <rect x="108" y="0"   width="36" height="36" fill="#0f5b54"/>
+                <rect x="144" y="0"   width="36" height="36" fill="#7da7a1"/>
+                <rect x="180" y="0"   width="36" height="36" fill="#bcd2cf"/>
+
+                <rect x="0"   y="36"  width="36" height="36" fill="#bcd2cf"/>
+                <rect x="36"  y="36"  width="36" height="36" fill="#0f5b54"/>
+                <rect x="72"  y="36"  width="36" height="36" fill="#0a3f3a"/>
+                <rect x="108" y="36"  width="36" height="36" fill="#0f5b54"/>
+                <rect x="144" y="36"  width="36" height="36" fill="#4a8a83"/>
+                <rect x="180" y="36"  width="36" height="36" fill="#dbe6e3"/>
+
+                <rect x="0"   y="72"  width="36" height="36" fill="#7da7a1"/>
+                <rect x="36"  y="72"  width="36" height="36" fill="#0f5b54"/>
+                <rect x="72"  y="72"  width="36" height="36" fill="#0f5b54"/>
+                <rect x="108" y="72"  width="36" height="36" fill="#3d7a72"/>
+                <rect x="144" y="72"  width="36" height="36" fill="#4a8a83"/>
+                <rect x="180" y="72"  width="36" height="36" fill="#bcd2cf"/>
+
+                <rect x="0"   y="108" width="36" height="36" fill="#a5c4c0"/>
+                <rect x="36"  y="108" width="36" height="36" fill="#4a8a83"/>
+                <rect x="72"  y="108" width="36" height="36" fill="#0f5b54"/>
+                <rect x="108" y="108" width="36" height="36" fill="#0a3f3a"/>
+                <rect x="144" y="108" width="36" height="36" fill="#3d7a72"/>
+                <rect x="180" y="108" width="36" height="36" fill="#7da7a1"/>
+
+                <rect x="0"   y="144" width="36" height="36" fill="#dbe6e3"/>
+                <rect x="36"  y="144" width="36" height="36" fill="#bcd2cf"/>
+                <rect x="72"  y="144" width="36" height="36" fill="#7da7a1"/>
+                <rect x="108" y="144" width="36" height="36" fill="#4a8a83"/>
+                <rect x="144" y="144" width="36" height="36" fill="#bcd2cf"/>
+                <rect x="180" y="144" width="36" height="36" fill="#ffffff"/>
+              </g>
+              <rect x="0" y="0" width="216" height="180" fill="none" stroke="#14140f" stroke-width="1"/>
+              <text x="-10" y="-12" class="dg-label-mono dg-label-mute">d₂</text>
+              <text x="220" y="200" class="dg-label-mono dg-label-mute" text-anchor="end">d₁</text>
+            </g>
+
+            <!-- color key for the agent bundle -->
+            <g transform="translate(60,440)">
+              <rect x="0" y="-8" width="10" height="6" fill="#b94a23"/>
+              <text x="14" y="-2" class="dg-label-mono dg-label-mute">θ</text>
+              <rect x="40" y="-8" width="10" height="6" fill="#dbe6e3" stroke="#0f5b54"/>
+              <text x="54" y="-2" class="dg-label-mono dg-label-mute">φ</text>
+              <rect x="80" y="-8" width="10" height="6" fill="#fbfaf6" stroke="#c08a14"/>
+              <text x="94" y="-2" class="dg-label-mono dg-label-mute">h</text>
+              <text x="120" y="-2" class="dg-label-italic dg-label-mute">— each agent carries its own copy of all three.</text>
+            </g>
+          </svg>
+          <figcaption><strong>Fig. 11</strong>The two updates that braid PBT and MAP-Elites together. The <span style="color:#0f5b54">teal arrows</span> are the repertoire update: every agent in the population is evaluated and inserted into the MAP-Elites grid. The <span style="color:#b94a23">orange arrow</span> is the population update: agents are ranked, the weakest are replaced by copies of the strongest, hyperparameters are perturbed. Both updates happen every iteration; the two loops feed each other.</figcaption>
+        </figure>
+      </div>
+
+      <h3>The population update — who lives, who dies, what mutates</h3>
+
+      <p>
+        At the end of each training step, the <span class="tex">P</span> agents are ranked by
+        fitness. Bottom <span class="bb">p%</span> agents (the paper sets <span class="bb">p =
+        0.2</span>) are deleted and replaced by clones of agents sampled from the top
+        <span class="bb">n%</span> (<span class="bb">n = 0.1</span>). A middle band of
+        <span class="bb">k = 0.4</span> agents — neither top nor bottom — is replaced by
+        random samples drawn from the MAP-Elites <em>repertoire</em>, not from the population.
+        This is the cross-pollination between the two loops: agents that are good in their
+        descriptor cell get a chance to compete in the population race.
+      </p>
+
+      <p>
+        Whenever an agent is replaced, its hyperparameters <span class="tex">h</span> are
+        <em>re-sampled</em> from a user-specified range — <em>not</em> copied from the source.
+        This is a subtle but important detail: the paper does not propagate strong
+        hyperparameter values; it propagates strong policy weights and re-rolls the
+        hyperparameter dice. The population is therefore continuously exploring the
+        hyperparameter space alongside the reward landscape.
+      </p>
+
+      <h3>The repertoire update — variation + competition</h3>
+
+      <p>
+        After the population update, every agent runs <span class="tex">S</span> training steps
+        of its inner RL algorithm (SAC or TD3 — your choice). Then a batch of agents is sampled
+        from the repertoire and crossed with the population via the isoline operator on
+        <span class="tex">θ</span> (the offspring inherit the parent's <span class="tex">h</span>,
+        unchanged — this is the one place hyperparameters propagate). Each updated and offspring
+        agent is then evaluated and competed into the repertoire by the usual one-cell-one-elite
+        rule.
+      </p>
+
+      <div class="pseudocode">
+<span class="pc-title">PBT-MAP-Elites — one outer iteration</span>
+<span class="kw">input</span>:  population <span class="var">P</span> of agents (θ, φ, h); repertoire <span class="var">R</span>
+
+<span class="com"># 1. POPULATION UPDATE — PBT-style</span>
+<span class="kw">rank</span> agents in <span class="var">P</span> by fitness
+<span class="kw">replace</span> bottom 20% &larr; copies of top 10%
+<span class="kw">replace</span> middle 40% &larr; random samples from repertoire <span class="var">R</span>
+<span class="com"># crucial: re-sample h for every replaced agent</span>
+<span class="kw">for</span> each replaced agent: h &larr; <span class="kw">sample</span>(hyperparameter ranges)
+
+<span class="com"># 2. INNER RL TRAINING — embarrassingly parallel</span>
+<span class="kw">for</span> agent in <span class="var">P</span> <span class="kw">in parallel</span>:
+    agent.(θ, φ) &larr; <span class="kw">RLstep</span>(agent, S steps)   <span class="com"># SAC or TD3 — black box</span>
+
+<span class="com"># 3. REPERTOIRE UPDATE — MAP-Elites-style</span>
+<span class="kw">for</span> agent in <span class="var">P</span>:
+    f, d &larr; F(agent.θ), Φ(agent.θ)
+    <span class="kw">compete</span> into <span class="var">R</span>[cell(d)] by fitness
+
+<span class="com"># offspring via isoline variation, also inserted</span>
+<span class="kw">sample</span> M parents from <span class="var">R</span>
+<span class="kw">apply</span> isoline operator to (θ, φ);  offspring inherit h from one parent
+<span class="kw">compete</span> offspring into <span class="var">R</span>
+      </div>
+
+      <p>
+        That's the entire algorithm. Both halves are off-the-shelf. The novelty is the bundling
+        and the bookkeeping between them.
+      </p>
+
+      <h2><span class="h2-num">3.3</span> What this fixes, item by item</h2>
+
+      <p>
+        Map each of the four downsides from Part 02 against what PBT-MAP-Elites does. The
+        symmetry is striking:
+      </p>
+
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            <th style="width: 26%">Downside</th>
+            <th>How PBT-MAP-Elites addresses it</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>(i)</strong> Hyperparameter sensitivity</td>
+            <td>Hyperparameters live inside the agent and are evolved by the population update. The user supplies a <em>range</em>, not a value.</td>
+          </tr>
+          <tr>
+            <td><strong>(ii)</strong> Training instability</td>
+            <td>Each agent carries its own critic and buffer. A bad gradient step poisons one agent, not the whole population. The PBT replacement step culls the failures.</td>
+          </tr>
+          <tr>
+            <td><strong>(iii)</strong> Low parallelism</td>
+            <td>Agents are independent objects with no shared state. Training each one is a job for a single accelerator. The paper measures near-linear speed-ups across machines.</td>
+          </tr>
+          <tr>
+            <td><strong>(iv)</strong> RL-algorithm coupling</td>
+            <td>The outer loop never inspects <span class="tex">φ</span> or the inner training procedure. SAC and TD3 both drop in; presumably anything else does too.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2><span class="h2-num">3.4</span> What hyperparameter evolution actually looks like</h2>
+
+      <p>
+        The paper's most visually striking result is not a number — it's a heat-map. After
+        training PBT-MAP-Elites (TD3) on AntTrap for the full budget, the authors visualize the
+        repertoire <em>three times</em>: once colored by fitness, once by the exploration-noise
+        hyperparameter, once by the discount factor <span class="tex">γ</span>. They do this at
+        four time points during training. The result is twelve panels showing the archive
+        learning <em>where</em> to behave differently — and, separately, <em>which
+        hyperparameters</em> to use in each behavioral region.
+      </p>
+
+      <p>
+        We're going to redraw the structure of that figure here, schematically, so the point
+        lands without needing the original PDF. (For the actual figure, see Fig. 3 in the paper,
+        or the §5 image on the project page.)
+      </p>
+
+      <div class="wide-fig">
+        <figure class="figure">
+          <svg viewBox="0 0 880 480" role="img" aria-label="Twelve small heat-map panels arranged as three rows by four columns, showing the AntTrap repertoire colored by fitness, exploration noise, and discount factor at four time points.">
+            <rect x="0" y="0" width="880" height="480" fill="none"/>
+
+            <!-- Title -->
+            <text x="440" y="22" text-anchor="middle" class="dg-label-mono">PBT-MAP-Elites (TD3) on AntTrap — schematic of paper Fig. 3</text>
+
+            <!-- column headers -->
+            <text x="200" y="60" text-anchor="middle" class="dg-label-mono">step 8.4 M</text>
+            <text x="365" y="60" text-anchor="middle" class="dg-label-mono">step 67 M</text>
+            <text x="530" y="60" text-anchor="middle" class="dg-label-mono">step 126 M</text>
+            <text x="695" y="60" text-anchor="middle" class="dg-label-mono">step 185 M</text>
+
+            <!-- row labels -->
+            <g>
+              <text x="70" y="110" class="dg-label-italic">fitness</text>
+              <text x="70" y="125" class="dg-label-mono dg-label-mute">(per cell)</text>
+              <text x="70" y="232" class="dg-label-italic">exploration</text>
+              <text x="70" y="246" class="dg-label-italic">noise</text>
+              <text x="70" y="261" class="dg-label-mono dg-label-mute">(per cell)</text>
+              <text x="70" y="350" class="dg-label-italic">discount γ</text>
+              <text x="70" y="365" class="dg-label-mono dg-label-mute">(per cell)</text>
+            </g>
+
+            <!-- defs for re-usable shading patterns -->
+            <defs>
+              <!-- gradient: low to high (teal scale) for fitness -->
+            </defs>
+
+            <!-- Row 1: FITNESS panels — get fuller and brighter over time -->
+            <g transform="translate(160,80)">
+              <!-- t1: very sparse, just left edge -->
+              <g>
+                <rect x="0" y="0" width="80" height="60" fill="#fbfaf6" stroke="#d9d5c6"/>
+                <circle cx="6"  cy="8"  r="2" fill="#7da7a1"/>
+                <circle cx="6"  cy="18" r="2" fill="#a5c4c0"/>
+                <circle cx="10" cy="34" r="2" fill="#7da7a1"/>
+                <circle cx="6"  cy="46" r="2" fill="#a5c4c0"/>
+                <circle cx="14" cy="52" r="2" fill="#7da7a1"/>
+              </g>
+              <!-- t2: half full -->
+              <g transform="translate(165,0)">
+                <rect x="0" y="0" width="80" height="60" fill="#fbfaf6" stroke="#d9d5c6"/>
+                <g fill="#a5c4c0">
+                  <circle cx="6" cy="6" r="2"/><circle cx="14" cy="14" r="2"/>
+                  <circle cx="22" cy="6" r="2"/><circle cx="30" cy="22" r="2"/>
+                  <circle cx="38" cy="14" r="2"/><circle cx="6" cy="30" r="2"/>
+                  <circle cx="22" cy="36" r="2"/><circle cx="14" cy="46" r="2"/>
+                  <circle cx="34" cy="46" r="2"/>
+                </g>
+                <g fill="#4a8a83">
+                  <circle cx="14" cy="10" r="2"/><circle cx="26" cy="14" r="2"/>
+                  <circle cx="42" cy="22" r="2"/><circle cx="10" cy="22" r="2"/>
+                  <circle cx="6" cy="14" r="2"/>
+                </g>
+                <g fill="#0f5b54">
+                  <circle cx="10" cy="6" r="2"/><circle cx="18" cy="14" r="2"/>
+                  <circle cx="6" cy="10" r="2"/>
+                </g>
+              </g>
+              <!-- t3: more full, brighter -->
+              <g transform="translate(330,0)">
+                <rect x="0" y="0" width="80" height="60" fill="#fbfaf6" stroke="#d9d5c6"/>
+                <g fill="#4a8a83">
+                  <circle cx="6" cy="6" r="2"/><circle cx="14" cy="14" r="2"/>
+                  <circle cx="22" cy="22" r="2"/><circle cx="30" cy="30" r="2"/>
+                  <circle cx="38" cy="14" r="2"/><circle cx="46" cy="6" r="2"/>
+                  <circle cx="54" cy="22" r="2"/><circle cx="62" cy="14" r="2"/>
+                  <circle cx="6" cy="22" r="2"/><circle cx="14" cy="30" r="2"/>
+                  <circle cx="22" cy="38" r="2"/><circle cx="30" cy="46" r="2"/>
+                </g>
+                <g fill="#0f5b54">
+                  <circle cx="10" cy="10" r="2"/><circle cx="18" cy="18" r="2"/>
+                  <circle cx="26" cy="14" r="2"/><circle cx="34" cy="22" r="2"/>
+                  <circle cx="42" cy="30" r="2"/><circle cx="50" cy="14" r="2"/>
+                  <circle cx="58" cy="6" r="2"/><circle cx="66" cy="22" r="2"/>
+                  <circle cx="6" cy="30" r="2"/><circle cx="14" cy="38" r="2"/>
+                </g>
+                <g fill="#0a3f3a">
+                  <circle cx="22" cy="14" r="2"/><circle cx="30" cy="22" r="2"/>
+                  <circle cx="38" cy="30" r="2"/><circle cx="46" cy="14" r="2"/>
+                </g>
+              </g>
+              <!-- t4: nearly full, even brighter -->
+              <g transform="translate(495,0)">
+                <rect x="0" y="0" width="80" height="60" fill="#fbfaf6" stroke="#d9d5c6"/>
+                <g fill="#4a8a83">
+                  <circle cx="6" cy="6" r="2"/><circle cx="14" cy="14" r="2"/>
+                  <circle cx="22" cy="22" r="2"/><circle cx="30" cy="30" r="2"/>
+                  <circle cx="38" cy="14" r="2"/><circle cx="46" cy="6" r="2"/>
+                  <circle cx="54" cy="22" r="2"/><circle cx="62" cy="14" r="2"/>
+                  <circle cx="70" cy="6" r="2"/><circle cx="74" cy="30" r="2"/>
+                  <circle cx="6" cy="22" r="2"/><circle cx="14" cy="30" r="2"/>
+                  <circle cx="22" cy="38" r="2"/><circle cx="30" cy="46" r="2"/>
+                  <circle cx="38" cy="38" r="2"/><circle cx="46" cy="46" r="2"/>
+                  <circle cx="54" cy="38" r="2"/><circle cx="62" cy="46" r="2"/>
+                </g>
+                <g fill="#0f5b54">
+                  <circle cx="10" cy="10" r="2"/><circle cx="18" cy="18" r="2"/>
+                  <circle cx="26" cy="14" r="2"/><circle cx="34" cy="22" r="2"/>
+                  <circle cx="42" cy="30" r="2"/><circle cx="50" cy="14" r="2"/>
+                  <circle cx="58" cy="6" r="2"/><circle cx="66" cy="22" r="2"/>
+                  <circle cx="6" cy="30" r="2"/><circle cx="14" cy="38" r="2"/>
+                  <circle cx="22" cy="46" r="2"/><circle cx="30" cy="54" r="2"/>
+                  <circle cx="38" cy="22" r="2"/><circle cx="46" cy="30" r="2"/>
+                  <circle cx="54" cy="14" r="2"/><circle cx="62" cy="22" r="2"/>
+                </g>
+                <g fill="#0a3f3a">
+                  <circle cx="22" cy="14" r="2"/><circle cx="30" cy="22" r="2"/>
+                  <circle cx="38" cy="30" r="2"/><circle cx="46" cy="14" r="2"/>
+                  <circle cx="54" cy="30" r="2"/><circle cx="62" cy="30" r="2"/>
+                  <circle cx="70" cy="22" r="2"/>
+                </g>
+              </g>
+            </g>
+
+            <!-- Row 2: EXPLORATION NOISE — starts uniform, develops structure -->
+            <g transform="translate(160,200)">
+              <!-- t1 -->
+              <g>
+                <rect x="0" y="0" width="80" height="60" fill="#fbfaf6" stroke="#d9d5c6"/>
+                <circle cx="6"  cy="14" r="2" fill="#dbab48"/>
+                <circle cx="6"  cy="34" r="2" fill="#dbab48"/>
+                <circle cx="10" cy="46" r="2" fill="#dbab48"/>
+              </g>
+              <!-- t2: structure begins -->
+              <g transform="translate(165,0)">
+                <rect x="0" y="0" width="80" height="60" fill="#fbfaf6" stroke="#d9d5c6"/>
+                <g fill="#7a5a14"><!-- low noise -->
+                  <circle cx="6"  cy="6"  r="2"/><circle cx="14" cy="10" r="2"/>
+                  <circle cx="22" cy="14" r="2"/><circle cx="6"  cy="14" r="2"/>
+                </g>
+                <g fill="#c08a14"><!-- mid noise -->
+                  <circle cx="14" cy="22" r="2"/><circle cx="22" cy="22" r="2"/>
+                  <circle cx="30" cy="14" r="2"/><circle cx="6"  cy="22" r="2"/>
+                  <circle cx="30" cy="30" r="2"/>
+                </g>
+                <g fill="#f4cd6b"><!-- high noise -->
+                  <circle cx="22" cy="38" r="2"/><circle cx="34" cy="38" r="2"/>
+                  <circle cx="14" cy="46" r="2"/><circle cx="6"  cy="38" r="2"/>
+                  <circle cx="34" cy="46" r="2"/><circle cx="38" cy="22" r="2"/>
+                  <circle cx="42" cy="30" r="2"/>
+                </g>
+              </g>
+              <!-- t3: clear coherent map -->
+              <g transform="translate(330,0)">
+                <rect x="0" y="0" width="80" height="60" fill="#fbfaf6" stroke="#d9d5c6"/>
+                <g fill="#7a5a14">
+                  <circle cx="6" cy="6" r="2"/><circle cx="10" cy="10" r="2"/>
+                  <circle cx="14" cy="14" r="2"/><circle cx="18" cy="6" r="2"/>
+                  <circle cx="6" cy="14" r="2"/>
+                </g>
+                <g fill="#c08a14">
+                  <circle cx="22" cy="14" r="2"/><circle cx="26" cy="22" r="2"/>
+                  <circle cx="30" cy="14" r="2"/><circle cx="14" cy="22" r="2"/>
+                  <circle cx="22" cy="22" r="2"/><circle cx="38" cy="14" r="2"/>
+                  <circle cx="6" cy="22" r="2"/><circle cx="34" cy="22" r="2"/>
+                </g>
+                <g fill="#f4cd6b">
+                  <circle cx="30" cy="30" r="2"/><circle cx="38" cy="30" r="2"/>
+                  <circle cx="46" cy="22" r="2"/><circle cx="54" cy="14" r="2"/>
+                  <circle cx="42" cy="38" r="2"/><circle cx="50" cy="30" r="2"/>
+                  <circle cx="58" cy="22" r="2"/><circle cx="66" cy="22" r="2"/>
+                  <circle cx="14" cy="38" r="2"/><circle cx="22" cy="46" r="2"/>
+                  <circle cx="30" cy="46" r="2"/><circle cx="38" cy="46" r="2"/>
+                </g>
+              </g>
+              <!-- t4: same map, slightly extended -->
+              <g transform="translate(495,0)">
+                <rect x="0" y="0" width="80" height="60" fill="#fbfaf6" stroke="#d9d5c6"/>
+                <g fill="#7a5a14">
+                  <circle cx="6" cy="6" r="2"/><circle cx="10" cy="10" r="2"/>
+                  <circle cx="14" cy="14" r="2"/><circle cx="18" cy="6" r="2"/>
+                  <circle cx="6" cy="14" r="2"/><circle cx="22" cy="6" r="2"/>
+                </g>
+                <g fill="#c08a14">
+                  <circle cx="22" cy="14" r="2"/><circle cx="26" cy="22" r="2"/>
+                  <circle cx="30" cy="14" r="2"/><circle cx="14" cy="22" r="2"/>
+                  <circle cx="22" cy="22" r="2"/><circle cx="38" cy="14" r="2"/>
+                  <circle cx="6" cy="22" r="2"/><circle cx="34" cy="22" r="2"/>
+                  <circle cx="22" cy="38" r="2"/><circle cx="6" cy="30" r="2"/>
+                </g>
+                <g fill="#f4cd6b">
+                  <circle cx="30" cy="30" r="2"/><circle cx="38" cy="30" r="2"/>
+                  <circle cx="46" cy="22" r="2"/><circle cx="54" cy="14" r="2"/>
+                  <circle cx="42" cy="38" r="2"/><circle cx="50" cy="30" r="2"/>
+                  <circle cx="58" cy="22" r="2"/><circle cx="66" cy="22" r="2"/>
+                  <circle cx="14" cy="38" r="2"/><circle cx="22" cy="46" r="2"/>
+                  <circle cx="30" cy="46" r="2"/><circle cx="38" cy="46" r="2"/>
+                  <circle cx="50" cy="46" r="2"/><circle cx="58" cy="38" r="2"/>
+                  <circle cx="62" cy="30" r="2"/><circle cx="70" cy="14" r="2"/>
+                </g>
+              </g>
+            </g>
+
+            <!-- Row 3: DISCOUNT γ — develops a different structure -->
+            <g transform="translate(160,320)">
+              <!-- t1 -->
+              <g>
+                <rect x="0" y="0" width="80" height="60" fill="#fbfaf6" stroke="#d9d5c6"/>
+                <circle cx="6"  cy="14" r="2" fill="#85b6af"/>
+                <circle cx="6"  cy="34" r="2" fill="#85b6af"/>
+                <circle cx="10" cy="46" r="2" fill="#85b6af"/>
+              </g>
+              <!-- t2 -->
+              <g transform="translate(165,0)">
+                <rect x="0" y="0" width="80" height="60" fill="#fbfaf6" stroke="#d9d5c6"/>
+                <g fill="#bcd2cf"><!-- low γ -->
+                  <circle cx="22" cy="38" r="2"/><circle cx="34" cy="38" r="2"/>
+                  <circle cx="14" cy="46" r="2"/><circle cx="22" cy="46" r="2"/>
+                </g>
+                <g fill="#4a8a83"><!-- mid γ -->
+                  <circle cx="14" cy="22" r="2"/><circle cx="22" cy="22" r="2"/>
+                  <circle cx="30" cy="14" r="2"/><circle cx="38" cy="22" r="2"/>
+                  <circle cx="6"  cy="22" r="2"/><circle cx="30" cy="30" r="2"/>
+                </g>
+                <g fill="#0f5b54"><!-- high γ -->
+                  <circle cx="6"  cy="6"  r="2"/><circle cx="14" cy="10" r="2"/>
+                  <circle cx="22" cy="14" r="2"/><circle cx="6"  cy="14" r="2"/>
+                  <circle cx="6"  cy="38" r="2"/><circle cx="34" cy="46" r="2"/>
+                </g>
+              </g>
+              <!-- t3 -->
+              <g transform="translate(330,0)">
+                <rect x="0" y="0" width="80" height="60" fill="#fbfaf6" stroke="#d9d5c6"/>
+                <g fill="#bcd2cf">
+                  <circle cx="30" cy="46" r="2"/><circle cx="38" cy="46" r="2"/>
+                  <circle cx="46" cy="46" r="2"/><circle cx="22" cy="46" r="2"/>
+                  <circle cx="38" cy="38" r="2"/><circle cx="50" cy="38" r="2"/>
+                </g>
+                <g fill="#4a8a83">
+                  <circle cx="14" cy="22" r="2"/><circle cx="22" cy="22" r="2"/>
+                  <circle cx="30" cy="22" r="2"/><circle cx="38" cy="22" r="2"/>
+                  <circle cx="6"  cy="22" r="2"/><circle cx="26" cy="30" r="2"/>
+                  <circle cx="42" cy="30" r="2"/><circle cx="14" cy="30" r="2"/>
+                  <circle cx="22" cy="38" r="2"/>
+                </g>
+                <g fill="#0f5b54">
+                  <circle cx="6"  cy="6"  r="2"/><circle cx="14" cy="14" r="2"/>
+                  <circle cx="22" cy="14" r="2"/><circle cx="30" cy="14" r="2"/>
+                  <circle cx="6"  cy="14" r="2"/><circle cx="38" cy="14" r="2"/>
+                  <circle cx="46" cy="14" r="2"/><circle cx="54" cy="14" r="2"/>
+                  <circle cx="62" cy="14" r="2"/><circle cx="18" cy="6"  r="2"/>
+                </g>
+              </g>
+              <!-- t4 -->
+              <g transform="translate(495,0)">
+                <rect x="0" y="0" width="80" height="60" fill="#fbfaf6" stroke="#d9d5c6"/>
+                <g fill="#bcd2cf">
+                  <circle cx="30" cy="46" r="2"/><circle cx="38" cy="46" r="2"/>
+                  <circle cx="46" cy="46" r="2"/><circle cx="22" cy="46" r="2"/>
+                  <circle cx="38" cy="38" r="2"/><circle cx="50" cy="38" r="2"/>
+                  <circle cx="58" cy="38" r="2"/><circle cx="62" cy="46" r="2"/>
+                  <circle cx="14" cy="38" r="2"/>
+                </g>
+                <g fill="#4a8a83">
+                  <circle cx="14" cy="22" r="2"/><circle cx="22" cy="22" r="2"/>
+                  <circle cx="30" cy="22" r="2"/><circle cx="38" cy="22" r="2"/>
+                  <circle cx="6"  cy="22" r="2"/><circle cx="26" cy="30" r="2"/>
+                  <circle cx="42" cy="30" r="2"/><circle cx="14" cy="30" r="2"/>
+                  <circle cx="22" cy="38" r="2"/><circle cx="50" cy="22" r="2"/>
+                  <circle cx="58" cy="22" r="2"/>
+                </g>
+                <g fill="#0f5b54">
+                  <circle cx="6"  cy="6"  r="2"/><circle cx="14" cy="14" r="2"/>
+                  <circle cx="22" cy="14" r="2"/><circle cx="30" cy="14" r="2"/>
+                  <circle cx="6"  cy="14" r="2"/><circle cx="38" cy="14" r="2"/>
+                  <circle cx="46" cy="14" r="2"/><circle cx="54" cy="14" r="2"/>
+                  <circle cx="62" cy="14" r="2"/><circle cx="18" cy="6"  r="2"/>
+                  <circle cx="66" cy="14" r="2"/><circle cx="74" cy="22" r="2"/>
+                </g>
+              </g>
+            </g>
+
+            <!-- color keys at the right -->
+            <g transform="translate(750,90)">
+              <text x="0" y="0" class="dg-label-mono dg-label-mute">fitness</text>
+              <rect x="0" y="6"  width="14" height="8" fill="#dbe6e3"/>
+              <rect x="0" y="14" width="14" height="8" fill="#7da7a1"/>
+              <rect x="0" y="22" width="14" height="8" fill="#0f5b54"/>
+              <rect x="0" y="30" width="14" height="8" fill="#0a3f3a"/>
+              <text x="18" y="13" class="dg-label-mono dg-label-mute">low</text>
+              <text x="18" y="37" class="dg-label-mono dg-label-mute">high</text>
+            </g>
+            <g transform="translate(750,210)">
+              <text x="0" y="0" class="dg-label-mono dg-label-mute">noise</text>
+              <rect x="0" y="6"  width="14" height="8" fill="#7a5a14"/>
+              <rect x="0" y="14" width="14" height="8" fill="#c08a14"/>
+              <rect x="0" y="22" width="14" height="8" fill="#f4cd6b"/>
+              <text x="18" y="13" class="dg-label-mono dg-label-mute">low</text>
+              <text x="18" y="29" class="dg-label-mono dg-label-mute">high</text>
+            </g>
+            <g transform="translate(750,330)">
+              <text x="0" y="0" class="dg-label-mono dg-label-mute">γ</text>
+              <rect x="0" y="6"  width="14" height="8" fill="#bcd2cf"/>
+              <rect x="0" y="14" width="14" height="8" fill="#4a8a83"/>
+              <rect x="0" y="22" width="14" height="8" fill="#0f5b54"/>
+              <text x="18" y="13" class="dg-label-mono dg-label-mute">low</text>
+              <text x="18" y="29" class="dg-label-mono dg-label-mute">high</text>
+            </g>
+
+            <!-- axis label below -->
+            <text x="440" y="445" text-anchor="middle" class="dg-label-italic">x-axis of each panel: agent's final x position · y-axis: final y position</text>
+            <text x="440" y="465" text-anchor="middle" class="dg-label-mono dg-label-mute">— same descriptor space across all 12 panels; only the colored quantity changes per row.</text>
+          </svg>
+          <figcaption><strong>Fig. 12</strong>The schematic of paper Fig. 3. The same twelve-panel grid is reproduced verbatim in the project page's §5; here we redraw it to show the structural point. From left to right the archive fills out — descriptor coverage grows. <em>Crucially, the noise and γ panels develop their own locally-coherent maps</em>: cells that lie near the trap get higher exploration noise (the agent needs to escape it); cells that lie past the trap get lower noise and higher γ (the agent has escaped and now needs to commit to running). The hyperparameters are not constants — they are <strong>functions of behavior</strong> that PBT discovered on its own.</figcaption>
+        </figure>
+      </div>
+
+      <div class="callout teal">
+        <span class="label">Why this matters</span>
+        <p>
+          PGA-MAP-Elites and QD-PG run with one global setting of these hyperparameters. They
+          have no way to say "use more noise here, less noise there". The fact that the optimal
+          hyperparameter varies spatially across the descriptor space is, in retrospect,
+          obvious — and exactly the kind of structure PBT was built to discover. The paper's
+          claim is not "hyperparameters matter" (everyone knows that). It is "the right value of
+          a hyperparameter is a function of where you are in behavior space, and the algorithm
+          can learn that function for free."
+        </p>
+      </div>
+
+      <h2><span class="h2-num">3.5</span> The HumanoidTrap headline</h2>
+
+      <p>
+        The benchmark numbers are in §5 of the project page; we won't restage them here. There is
+        one result worth pinning to the wall, however, because it lands the entire argument of
+        the paper in a single observation.
+      </p>
+
+      <p>
+        <strong>HumanoidTrap</strong> is the hardest environment in the suite. A 17-DOF humanoid
+        starts facing a wall; reward is forward velocity; the only way to actually make forward
+        progress is to side-step around the obstacle. Running straight is locally optimal and
+        globally terrible. Walking around it requires sustained, complex motor control and
+        sustained exploration.
+      </p>
+
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Solves HumanoidTrap within budget?</th>
+            <th>Why / why not</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>MAP-Elites (vanilla)</td>
+            <td><span class="no">no</span></td>
+            <td>Random mutation cannot drive a 17-DOF policy.</td>
+          </tr>
+          <tr>
+            <td>PGA-MAP-Elites (TD3)</td>
+            <td><span class="no">no</span></td>
+            <td>TD3 itself cannot run vanilla Humanoid. The original TD3 paper doesn't try.</td>
+          </tr>
+          <tr>
+            <td>QD-PG (TD3)</td>
+            <td><span class="no">no</span></td>
+            <td>Same reason: TD3-dependent.</td>
+          </tr>
+          <tr>
+            <td>ME-ES</td>
+            <td><span class="no">no</span></td>
+            <td>Too sample-inefficient — it would need ~2 orders of magnitude more steps.</td>
+          </tr>
+          <tr>
+            <td>PBT alone</td>
+            <td><span class="no">no</span></td>
+            <td>No diversity pressure; the population collapses onto the locally-optimal "run into the wall" policy.</td>
+          </tr>
+          <tr>
+            <td><strong>PBT-MAP-Elites (SAC)</strong></td>
+            <td><span class="yes">yes</span></td>
+            <td>SAC handles the inner Humanoid control; MAP-Elites' descriptor pressure forces sideways exploration; PBT keeps the hyperparameters in a useful regime throughout.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The point is not merely that PBT-MAP-Elites (SAC) wins. It is that <em>every other
+        baseline fails for a different reason</em>, and PBT-MAP-Elites is the only method whose
+        architecture allows it to address all of those failure modes at once. Diversity defeats
+        the deceptive reward signal. SAC handles the control problem TD3 cannot. PBT keeps the
+        hyperparameters appropriate as training progresses. Take away any one of the three and
+        the result evaporates.
+      </p>
+
+      <h2><span class="h2-num">3.6</span> What to take away</h2>
+
+      <p>
+        Three things, in descending order of importance.
+      </p>
+
+      <ol>
+        <li>
+          <strong>The agent abstraction is the contribution.</strong> Once you decide that the
+          unit of evolution is the bundle <span class="tex">(θ, φ, h)</span> rather than just
+          <span class="tex">θ</span>, the rest is straightforward — both PBT and MAP-Elites are
+          off-the-shelf. Most of the paper is checking that the straightforward thing actually
+          works.
+        </li>
+        <li>
+          <strong>Hyperparameters are functions of behavior, not constants.</strong> The
+          twelve-panel figure is the most generalizable claim in the paper. Whenever you have
+          a population that covers a behavior space, you should ask what hyperparameter setting
+          each behavior wants. The answer is, very often, "a different one."
+        </li>
+        <li>
+          <strong>Decoupling from the inner RL algorithm is what makes it useful.</strong>
+          MAP-Elites variants that depend on a specific RL backbone have a ceiling: whatever
+          their backbone can't do, they can't do either. PBT-MAP-Elites breaks that ceiling. The
+          SAC vs TD3 comparison in the paper is a concrete demonstration. Anyone building on
+          this work can substitute their preferred RL algorithm without rewriting the QD part.
+        </li>
+      </ol>
+
+      <div class="callout">
+        <span class="label">Where to next</span>
+        <p>
+          Project page §6 documents what our team actually reproduced (Walker2d-Uni with
+          PBT-MAP-Elites (SAC), AntTrap with the same), and §4 has the rollout videos drawn
+          from the resulting archives. The PDF (linked from the project page) is the canonical
+          source for the metric numbers we summarized here.
+        </p>
+      </div>
+
+    </main>
+
+    <nav class="learn-nav" aria-label="Continue">
+      <a href="02-rl-meets-mapelites.html" class="prev">
+        <span class="lab">&larr; Part 02</span>
+        <span class="ttl">RL meets MAP-Elites: a lineage</span>
+      </a>
+      <a href="../index.html" class="next">
+        <span class="lab">Project page &rarr;</span>
+        <span class="ttl">Back to the deliverable</span>
+      </a>
+    </nav>
+
+    <footer class="learn-footer">
+      <p>CS410.Q21 final-project explainer &middot; Part 03 of 3 &middot; <a href="../index.html">return to project page</a></p>
+    </footer>
+
+  </body>
+</html>

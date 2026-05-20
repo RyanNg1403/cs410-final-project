@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>1. Quality, Diversity, MAP-Elites — PBT-MAP-Elites explainer</title>
+    <meta name="description" content="A visual primer on Quality-Diversity optimization and the MAP-Elites algorithm — the primitives the paper builds on.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Castoro:ital@0;1&family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="learn.css">
+  </head>
+  <body>
+
+    <header class="learn-header">
+      <a class="brand" href="../index.html"><span>CS410.Q21</span><span class="brand-divider">·</span><span>Explainer</span></a>
+      <nav class="crumbs" aria-label="Pages">
+        <a href="01-quality-diversity.html" class="is-current"><span class="step-num">01</span>Primitives</a>
+        <a href="02-rl-meets-mapelites.html"><span class="step-num">02</span>Lineage</a>
+        <a href="03-pbt-mapelites.html"><span class="step-num">03</span>PBT-MAP-Elites</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow"><span class="part-num">01</span>Primitives</p>
+      <h1 class="title">One peak is not enough.</h1>
+      <p class="subtitle">
+        Before the paper introduces a new algorithm, it inherits an entire optimization philosophy.
+        This page is for getting that philosophy under your skin — what Quality-Diversity is,
+        why you need it, and how MAP-Elites makes it concrete.
+      </p>
+      <div class="hero-meta">
+        <div><strong>Read time</strong>10 minutes</div>
+        <div><strong>You will learn</strong>Behavior descriptors · MAP-Elites archive · Isoline variation · QD-score</div>
+        <div><strong>Math required</strong>None beyond comfort with vectors</div>
+      </div>
+    </section>
+
+    <main class="article">
+
+      <h2><span class="h2-num">1.1</span> The optimizer's reflex</h2>
+
+      <p>
+        Hand any optimizer a function and ask for the best input, and it will give you back
+        a single number. Reinforcement learning trains a single policy to maximize a single
+        scalar reward. SGD descends to a single minimum. Evolution Strategies returns a single
+        winner. Across the whole machine-learning bestiary, the default verb is <em>maximize</em>
+        and the default noun is <em>solution</em>, singular.
+      </p>
+
+      <p>
+        For a lot of problems that's the right reflex. For some, it is exactly the wrong one.
+        A robot that can run forward isn't very useful if you also want it to back-pedal, side-step,
+        or shuffle in a confined space. A controller that wins on a level surface may collapse on
+        a slope. A policy that always sprints toward the goal isn't actually solving an
+        environment where the direct path is blocked.
+      </p>
+
+      <div class="margin-fig">
+        <figure class="figure">
+          <svg viewBox="0 0 240 300" role="img" aria-label="A fitness curve with three peaks; a single arrow points to the highest one labeled 'what RL keeps'; three small bracket marks label all three peaks as 'what QD keeps'.">
+            <!-- frame -->
+            <rect x="0" y="0" width="240" height="300" fill="none"/>
+            <!-- axes -->
+            <line x1="20" y1="240" x2="220" y2="240" class="dg-axis"/>
+            <line x1="20" y1="240" x2="20" y2="40" class="dg-axis"/>
+            <text x="220" y="258" text-anchor="end" class="dg-label-mono dg-label-mute">parameter θ</text>
+            <text x="20" y="34" text-anchor="start" class="dg-label-mono dg-label-mute">fitness F(θ)</text>
+            <!-- multi-peak curve -->
+            <path d="M 20 220 Q 50 140 80 170 Q 110 220 140 70 Q 170 220 200 130 L 220 230"
+                  class="dg-stroke-mute" stroke-width="1.6"/>
+            <!-- peak markers -->
+            <circle cx="76"  cy="166" r="3.5" class="dg-fill-link"/>
+            <circle cx="140" cy="70"  r="3.5" class="dg-fill-link"/>
+            <circle cx="200" cy="130" r="3.5" class="dg-fill-link"/>
+            <!-- RL arrow -->
+            <line x1="160" y1="50" x2="142" y2="64" class="dg-stroke-link" stroke-width="1.2"/>
+            <polygon points="142,64 148,58 148,68" class="dg-fill-link"/>
+            <text x="164" y="50" class="dg-label-italic">single best</text>
+            <text x="164" y="64" class="dg-label-mono dg-label-mute">RL converges here</text>
+            <!-- QD bracket -->
+            <path d="M 60 264 L 60 270 L 218 270 L 218 264" class="dg-stroke-teal" stroke-width="1.2"/>
+            <line x1="139" y1="270" x2="139" y2="276" class="dg-stroke-teal" stroke-width="1.2"/>
+            <text x="139" y="290" text-anchor="middle" class="dg-label-italic" fill="#0f5b54">QD keeps all of them</text>
+          </svg>
+          <figcaption><strong>Fig. 1</strong>Standard optimization is a winner-takes-all argmax over parameter space. Quality-Diversity asks the harder, more useful question: <em>which solutions, plural?</em></figcaption>
+        </figure>
+      </div>
+
+      <p>
+        Quality-Diversity (QD) optimization is the family of methods that refuses the singular.
+        Rather than returning the highest peak of the fitness landscape, a QD method returns a
+        catalogue of <em>locally-best</em> solutions — one for every recognizably different way of
+        solving the problem. It is, deliberately, a more expensive question to answer.
+      </p>
+
+      <div class="callout">
+        <span class="label">Working definition</span>
+        <p>
+          A <strong>Quality-Diversity method</strong> trades sample-efficiency for coverage.
+          Where standard optimization returns <em>one</em> high-fitness policy, a QD method
+          maintains a <em>collection</em> of policies that are each high-fitness <em>given a
+          chosen behavioral niche</em>. The collection is called a <strong>repertoire</strong>
+          or <strong>archive</strong>; the niches are indexed by something called a
+          behavior descriptor.
+        </p>
+      </div>
+
+      <h2><span class="h2-num">1.2</span> The trick: separate <em>what</em> from <em>how</em></h2>
+
+      <p>
+        Every QD method makes the same load-bearing move at the start. It assumes you can
+        cleanly separate two things about a policy: <em>how good it is</em> (a fitness scalar) and
+        <em>how it does what it does</em> (a low-dimensional behavior descriptor). The first is the
+        familiar scalar reward. The second is the design choice that makes the whole machinery
+        work.
+      </p>
+
+      <p>
+        Formally we map every policy <span class="tex">π<sub>θ</sub></span> through two functions.
+        The fitness <span class="tex">F: Θ → ℝ</span> gives the scalar return — undiscounted episode
+        reward, the same number you'd report to a reward-only optimizer. The descriptor
+        <span class="tex">Φ: Θ → 𝒟</span> gives a vector in some small, human-chosen behavior space
+        <span class="tex">𝒟</span>. Typical descriptor spaces are two- or three-dimensional. Typical
+        descriptor functions are obtained by rolling the policy out and summarizing the trajectory.
+      </p>
+
+      <div class="wide-fig">
+        <figure class="figure">
+          <svg viewBox="0 0 880 260" role="img" aria-label="Diagram showing the high-dimensional policy parameter space mapped through phi to a low-dimensional behavior descriptor space.">
+            <!-- frame -->
+            <rect x="0" y="0" width="880" height="260" fill="none"/>
+
+            <!-- Left: Theta cloud -->
+            <text x="40" y="34" class="dg-label-mono">Θ &nbsp; policy parameter space</text>
+            <text x="40" y="50" class="dg-label-italic dg-label-mute">high-dimensional, ~10⁵ neural net weights</text>
+            <g transform="translate(180,150)">
+              <ellipse rx="120" ry="80" fill="#f0eee5" stroke="#d9d5c6" stroke-width="1"/>
+              <!-- scattered dots -->
+              <circle cx="-60" cy="-30" r="3" class="dg-fill-mute"/>
+              <circle cx="-40" cy="10"  r="3" class="dg-fill-mute"/>
+              <circle cx="-10" cy="-50" r="3" class="dg-fill-mute"/>
+              <circle cx="20"  cy="20"  r="3" class="dg-fill-mute"/>
+              <circle cx="50"  cy="-10" r="3" class="dg-fill-mute"/>
+              <circle cx="70"  cy="30"  r="3" class="dg-fill-mute"/>
+              <circle cx="0"   cy="40"  r="3" class="dg-fill-mute"/>
+              <circle cx="-80" cy="20"  r="3" class="dg-fill-mute"/>
+              <!-- highlighted policy -->
+              <circle cx="20" cy="-20" r="5" class="dg-fill-link"/>
+              <text x="32" y="-20" class="dg-label-mono" fill="#b94a23">π<tspan font-style="italic">θ</tspan></text>
+            </g>
+
+            <!-- Arrow: phi -->
+            <g transform="translate(320,150)">
+              <line x1="0" y1="0" x2="180" y2="0" class="dg-stroke-link" stroke-width="2"/>
+              <polygon points="180,0 168,-6 168,6" class="dg-fill-link"/>
+              <text x="90" y="-14" text-anchor="middle" class="dg-label-italic" fill="#b94a23">Φ</text>
+              <text x="90" y="22" text-anchor="middle" class="dg-label-mono dg-label-mute">roll out · summarize trajectory</text>
+            </g>
+
+            <!-- Right: behavior descriptor space -->
+            <text x="540" y="34" class="dg-label-mono">𝒟 &nbsp; behavior descriptor space</text>
+            <text x="540" y="50" class="dg-label-italic dg-label-mute">low-dimensional, chosen by hand, e.g. ℝ²</text>
+            <g transform="translate(680,150)">
+              <!-- 2D axes -->
+              <line x1="-90" y1="60" x2="90" y2="60" class="dg-axis"/>
+              <line x1="-90" y1="60" x2="-90" y2="-60" class="dg-axis"/>
+              <text x="92" y="74" class="dg-label-mono dg-label-mute">d₁</text>
+              <text x="-90" y="-66" text-anchor="start" class="dg-label-mono dg-label-mute">d₂</text>
+              <!-- scattered dots, colored by fitness -->
+              <circle cx="-50" cy="-30" r="3.5" fill="#85b6af"/>
+              <circle cx="-20" cy="20"  r="3.5" fill="#4a8a83"/>
+              <circle cx="10"  cy="-10" r="3.5" fill="#0f5b54"/>
+              <circle cx="40"  cy="30"  r="3.5" fill="#7da7a1"/>
+              <circle cx="60"  cy="-40" r="3.5" fill="#0f5b54"/>
+              <circle cx="-65" cy="40"  r="3.5" fill="#bcd2cf"/>
+              <circle cx="20"  cy="50"  r="3.5" fill="#4a8a83"/>
+              <!-- highlighted point -->
+              <circle cx="0" cy="-20" r="6" class="dg-fill-link"/>
+              <text x="10" y="-26" class="dg-label-mono" fill="#b94a23">Φ(π<tspan font-style="italic">θ</tspan>)</text>
+            </g>
+            <!-- legend -->
+            <g transform="translate(680, 230)">
+              <text text-anchor="middle" class="dg-label-italic dg-label-mute">colour = fitness (darker = higher)</text>
+            </g>
+          </svg>
+          <figcaption><strong>Fig. 2</strong>Diversity is measured in behavior space, not parameter space. Two neural-network weight vectors that look completely different can land on the same descriptor — and from the QD point of view they are then the <em>same</em> solution. The reverse also holds: very similar weights can land on different descriptors.</figcaption>
+        </figure>
+      </div>
+
+      <p>
+        Choosing the descriptor is the modelling decision. In a locomotion task you might pick the
+        time-averaged frequency of each leg's ground contact: now an agent that hops is at one
+        place in <span class="tex">𝒟</span>, an agent that runs cleanly is at another, and a
+        shuffler somewhere in between. In a trap-navigation task you might pick the
+        <span class="tex">(x, y)</span> position of the robot at episode end. Now an agent
+        that escapes north lives at one descriptor, an agent that escapes south at another, and an
+        agent that gives up halfway and falls over lives somewhere near the start.
+      </p>
+
+      <div class="margin-fig">
+        <div class="sidenote">
+          <span class="sn-label">Descriptor design</span>
+          The paper's authors choose descriptors that are <em>orthogonal to the fitness</em>: position
+          for goal-reaching tasks, foot-contact frequencies for unidirectional locomotion. The
+          implicit theory is that diversity is most useful when it spans a dimension the fitness
+          function does not already incentivize. Otherwise the search collapses back onto a single
+          mode.
+        </div>
+      </div>
+
+      <h2><span class="h2-num">1.3</span> MAP-Elites: a grid you fill with elites</h2>
+
+      <p>
+        With <span class="tex">F</span> and <span class="tex">Φ</span> fixed, an algorithm needs to
+        do two things: <em>generate candidates</em>, and <em>decide what to keep</em>. MAP-Elites
+        (Mouret &amp; Clune, 2015) is the simplest answer that actually works. It discretizes the
+        descriptor space into a regular grid of cells, then enforces one simple invariant: each
+        cell holds at most one policy — the highest-fitness one that has ever landed in it. That
+        policy is called the cell's <em>elite</em>.
+      </p>
+
+      <div class="wide-fig">
+        <figure class="figure">
+          <svg viewBox="0 0 880 360" role="img" aria-label="A 6x6 MAP-Elites grid showing filled cells colored by fitness, with annotations explaining the competition rule.">
+            <rect x="0" y="0" width="880" height="360" fill="none"/>
+
+            <!-- Title -->
+            <text x="440" y="28" text-anchor="middle" class="dg-label-mono">A MAP-Elites repertoire after a few hundred iterations</text>
+
+            <!-- Grid: 6x6 cells, 50x50 each, starting at (190, 60) -->
+            <g transform="translate(190,60)">
+              <!-- grid lines and cells -->
+              <!-- fill rule: hand-pick colors per cell to look like a partially-explored archive -->
+              <!-- empty cells -->
+              <g class="dg-grid">
+                <rect x="0"   y="0"   width="50" height="50" fill="#ffffff"/>
+                <rect x="50"  y="0"   width="50" height="50" fill="#ffffff"/>
+                <rect x="100" y="0"   width="50" height="50" fill="#ffffff"/>
+                <rect x="150" y="0"   width="50" height="50" fill="#ffffff"/>
+                <rect x="200" y="0"   width="50" height="50" fill="#ffffff"/>
+                <rect x="250" y="0"   width="50" height="50" fill="#ffffff"/>
+
+                <rect x="0"   y="50"  width="50" height="50" fill="#dbe6e3"/>
+                <rect x="50"  y="50"  width="50" height="50" fill="#a5c4c0"/>
+                <rect x="100" y="50"  width="50" height="50" fill="#7da7a1"/>
+                <rect x="150" y="50"  width="50" height="50" fill="#4a8a83"/>
+                <rect x="200" y="50"  width="50" height="50" fill="#7da7a1"/>
+                <rect x="250" y="50"  width="50" height="50" fill="#ffffff"/>
+
+                <rect x="0"   y="100" width="50" height="50" fill="#7da7a1"/>
+                <rect x="50"  y="100" width="50" height="50" fill="#0f5b54"/>
+                <rect x="100" y="100" width="50" height="50" fill="#0f5b54"/>
+                <rect x="150" y="100" width="50" height="50" fill="#3d7a72"/>
+                <rect x="200" y="100" width="50" height="50" fill="#4a8a83"/>
+                <rect x="250" y="100" width="50" height="50" fill="#a5c4c0"/>
+
+                <rect x="0"   y="150" width="50" height="50" fill="#3d7a72"/>
+                <rect x="50"  y="150" width="50" height="50" fill="#0f5b54"/>
+                <rect x="100" y="150" width="50" height="50" fill="#155b54"/>
+                <rect x="150" y="150" width="50" height="50" fill="#0f5b54"/>
+                <rect x="200" y="150" width="50" height="50" fill="#3d7a72"/>
+                <rect x="250" y="150" width="50" height="50" fill="#7da7a1"/>
+
+                <rect x="0"   y="200" width="50" height="50" fill="#a5c4c0"/>
+                <rect x="50"  y="200" width="50" height="50" fill="#4a8a83"/>
+                <rect x="100" y="200" width="50" height="50" fill="#3d7a72"/>
+                <rect x="150" y="200" width="50" height="50" fill="#0f5b54"/>
+                <rect x="200" y="200" width="50" height="50" fill="#3d7a72"/>
+                <rect x="250" y="200" width="50" height="50" fill="#ffffff"/>
+
+                <rect x="0"   y="250" width="50" height="50" fill="#ffffff"/>
+                <rect x="50"  y="250" width="50" height="50" fill="#dbe6e3"/>
+                <rect x="100" y="250" width="50" height="50" fill="#a5c4c0"/>
+                <rect x="150" y="250" width="50" height="50" fill="#7da7a1"/>
+                <rect x="200" y="250" width="50" height="50" fill="#ffffff"/>
+                <rect x="250" y="250" width="50" height="50" fill="#ffffff"/>
+              </g>
+
+              <!-- grid border -->
+              <rect x="0" y="0" width="300" height="300" fill="none" stroke="#14140f" stroke-width="1.2"/>
+
+              <!-- new candidate landing in (3,4) -->
+              <circle cx="175" cy="125" r="7" class="dg-fill-link" stroke="#14140f" stroke-width="1"/>
+              <line x1="175" y1="125" x2="240" y2="-20" class="dg-stroke-link" stroke-width="1.2" stroke-dasharray="3 3"/>
+              <circle cx="240" cy="-20" r="4" class="dg-fill-link"/>
+
+              <!-- axes labels -->
+              <text x="-10" y="-12" class="dg-label-mono dg-label-mute">d₂</text>
+              <text x="312" y="312" class="dg-label-mono dg-label-mute" text-anchor="end">d₁</text>
+              <line x1="0" y1="305" x2="305" y2="305" class="dg-axis"/>
+              <line x1="-5" y1="0" x2="-5" y2="305" class="dg-axis"/>
+            </g>
+
+            <!-- Annotations -->
+            <text x="540" y="80" class="dg-label-italic" fill="#b94a23">new candidate π'</text>
+            <text x="540" y="98" class="dg-label-sans">descriptor Φ(π') = (d₁=4, d₂=3)</text>
+
+            <text x="540" y="145" class="dg-label-italic">if F(π') &gt; F(elite at cell)</text>
+            <text x="540" y="163" class="dg-label-sans">→ π' replaces the elite</text>
+            <text x="540" y="184" class="dg-label-italic">else</text>
+            <text x="540" y="202" class="dg-label-sans">→ π' is discarded entirely.</text>
+
+            <line x1="540" y1="225" x2="860" y2="225" class="dg-stroke-mute"/>
+
+            <text x="540" y="250" class="dg-label-italic">One cell. One elite. Forever.</text>
+            <text x="540" y="270" class="dg-label-sans">Beating the current occupant is the only</text>
+            <text x="540" y="288" class="dg-label-sans">way a new policy stays in the archive.</text>
+
+            <!-- color legend -->
+            <g transform="translate(20,120)">
+              <text class="dg-label-mono dg-label-mute">fitness</text>
+              <rect x="0" y="10" width="14" height="14" fill="#ffffff" stroke="#d9d5c6"/>
+              <text x="20" y="22" class="dg-label-mono">empty</text>
+              <rect x="0" y="32" width="14" height="14" fill="#dbe6e3"/>
+              <text x="20" y="44" class="dg-label-mono">low</text>
+              <rect x="0" y="54" width="14" height="14" fill="#4a8a83"/>
+              <text x="20" y="66" class="dg-label-mono">mid</text>
+              <rect x="0" y="76" width="14" height="14" fill="#0f5b54"/>
+              <text x="20" y="88" class="dg-label-mono">high</text>
+            </g>
+          </svg>
+          <figcaption><strong>Fig. 3</strong>The MAP-Elites repertoire is a discretized map of the descriptor space, one cell per niche. The competition rule is local and brutally simple: a new candidate either beats the cell's current occupant or is forgotten. Notice that the corners stay empty — some behaviors are physically unreachable, and that's fine: the algorithm doesn't need to fill every cell, only to fill <em>as many as it can</em> with <em>the best policy it can find</em> for each.</figcaption>
+        </figure>
+      </div>
+
+      <p>
+        The loop, in plain pseudocode, takes about ten lines:
+      </p>
+
+      <div class="pseudocode">
+<span class="pc-title">MAP-Elites (Mouret &amp; Clune, 2015)</span>
+<span class="kw">initialize</span> archive <span class="var">A</span> &larr; empty map (cell &rarr; (π, F(π)))
+<span class="kw">for</span> g <span class="kw">in</span> 1..G:
+<span class="com">    # 1. SELECT</span>
+    <span class="kw">if</span> <span class="var">A</span> is empty:  π &larr; sample random initial policy
+    <span class="kw">else</span>:           π &larr; sample uniformly from <span class="var">A</span>'s occupants
+<span class="com">    # 2. VARY</span>
+    π' &larr; <span class="kw">mutate</span>(π)           <span class="com"># add noise, isoline operator, etc.</span>
+<span class="com">    # 3. EVALUATE</span>
+    f &larr; F(π')                  <span class="com"># scalar fitness</span>
+    d &larr; Φ(π')                  <span class="com"># behavior descriptor</span>
+<span class="com">    # 4. COMPETE — the one-cell-one-elite invariant</span>
+    <span class="kw">if</span> cell(d) &notin; <span class="var">A</span> <span class="kw">or</span> f &gt; <span class="var">A</span>[cell(d)].fitness:
+        <span class="var">A</span>[cell(d)] &larr; (π', f)
+<span class="kw">return</span> <span class="var">A</span>
+      </div>
+
+      <p>
+        Everything interesting in QD happens either in the descriptor function
+        <span class="tex">Φ</span>, in the variation operator <span class="kw">mutate</span>, or in
+        the way candidates get scored. The skeleton above is invariant across decades of work.
+      </p>
+
+      <h2><span class="h2-num">1.4</span> The variation step, and why it matters</h2>
+
+      <p>
+        Vanilla MAP-Elites mutates a parent by adding Gaussian noise to its parameters. That works
+        beautifully when policies are tiny (a few dozen continuous parameters describing a hexapod
+        gait) and disastrously when policies are deep neural networks with hundreds of thousands of
+        weights. The reason is the curse of dimensionality: most random perturbations in a
+        very high-dimensional space point in useless directions, so the offspring's fitness
+        collapses to zero before it has a chance to land in a new cell.
+      </p>
+
+      <p>
+        Modern QD methods replace pure noise with a smarter <em>variation operator</em>. The most
+        common is the <strong>isoline operator</strong> (Vassiliades &amp; Mouret, 2018), which
+        samples a second parent from the archive and produces offspring distributed along the
+        line connecting the two, plus a small isotropic noise:
+      </p>
+
+      <div class="equation">
+        θ<sub>off</sub> &nbsp; = &nbsp; θ<sub>1</sub> &nbsp; + &nbsp; &Nu;(0, σ<sub>1</sub><sup>2</sup>&middot;I) &nbsp; + &nbsp; (θ<sub>2</sub> − θ<sub>1</sub>) &middot; &Nu;(0, σ<sub>2</sub><sup>2</sup>)
+      </div>
+
+      <div class="margin-fig">
+        <figure class="figure">
+          <svg viewBox="0 0 240 240" role="img" aria-label="Two parent points in parameter space with offspring distributed along the line connecting them.">
+            <rect x="0" y="0" width="240" height="240" fill="none"/>
+
+            <!-- background frame -->
+            <rect x="20" y="20" width="200" height="200" class="dg-fill-bg-alt" stroke="#d9d5c6"/>
+
+            <!-- parents -->
+            <circle cx="60"  cy="170" r="6" class="dg-fill-link" stroke="#14140f"/>
+            <text x="40" y="182" class="dg-label-mono" fill="#b94a23">θ₁</text>
+            <circle cx="180" cy="60"  r="6" class="dg-fill-link" stroke="#14140f"/>
+            <text x="186" y="56" class="dg-label-mono" fill="#b94a23">θ₂</text>
+
+            <!-- line through parents -->
+            <line x1="60" y1="170" x2="180" y2="60" stroke="#b94a23" stroke-width="1" stroke-dasharray="3 3"/>
+
+            <!-- offspring along the line, with perpendicular noise -->
+            <g class="dg-fill-teal">
+              <circle cx="75"  cy="158" r="2.5"/>
+              <circle cx="92"  cy="142" r="2.5"/>
+              <circle cx="108" cy="128" r="2.5"/>
+              <circle cx="118" cy="118" r="2.5"/>
+              <circle cx="130" cy="108" r="2.5"/>
+              <circle cx="146" cy="92"  r="2.5"/>
+              <circle cx="160" cy="78"  r="2.5"/>
+              <!-- perpendicular scatter -->
+              <circle cx="100" cy="124" r="2.5"/>
+              <circle cx="86"  cy="150" r="2.5"/>
+              <circle cx="138" cy="106" r="2.5"/>
+              <circle cx="116" cy="124" r="2.5"/>
+              <circle cx="124" cy="100" r="2.5"/>
+              <circle cx="148" cy="100" r="2.5"/>
+            </g>
+
+            <text x="120" y="200" text-anchor="middle" class="dg-label-italic" fill="#0f5b54">offspring</text>
+
+            <!-- noise arrows -->
+            <text x="36" y="36" class="dg-label-mono dg-label-mute">parameter space Θ</text>
+          </svg>
+          <figcaption><strong>Fig. 4</strong>Isoline variation. Offspring stay close to the segment between two archive parents; <span class="tex">σ<sub>1</sub></span> controls perpendicular spread, <span class="tex">σ<sub>2</sub></span> controls how far along the line they can land. In the paper's experiments σ<sub>1</sub> = 0.005, σ<sub>2</sub> = 0.05.</figcaption>
+        </figure>
+      </div>
+
+      <p>
+        The isoline operator is doing something subtle. Each parent is itself a local optimum
+        inside <em>its</em> descriptor cell. Their connecting line is a credible interpolation
+        between two known-good policies. Offspring sampled along it are likelier to be reasonable
+        than a random perturbation of either one alone. In practice this single change is what
+        lets MAP-Elites scale to deep-network policies at all — and it's the operator the paper
+        uses throughout.
+      </p>
+
+      <h2><span class="h2-num">1.5</span> How do we score a repertoire?</h2>
+
+      <p>
+        Once your output is a collection rather than a single policy, you need new metrics. The QD
+        literature has converged on three, and the paper reports all three:
+      </p>
+
+      <div class="wide-fig">
+        <figure class="figure">
+          <svg viewBox="0 0 880 280" role="img" aria-label="Three small archive thumbnails illustrating maximum fitness, coverage, and QD-score.">
+            <rect x="0" y="0" width="880" height="280" fill="none"/>
+
+            <!-- helper: 5x5 grid template -->
+            <!-- THUMB 1: max fitness -->
+            <g transform="translate(60,40)">
+              <text x="80" y="-12" text-anchor="middle" class="dg-label-mono">max fitness</text>
+              <g>
+                <rect x="0"   y="0"  width="32" height="32" fill="#ffffff" stroke="#d9d5c6"/>
+                <rect x="32"  y="0"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="64"  y="0"  width="32" height="32" fill="#7da7a1" stroke="#d9d5c6"/>
+                <rect x="96"  y="0"  width="32" height="32" fill="#dbe6e3" stroke="#d9d5c6"/>
+                <rect x="128" y="0"  width="32" height="32" fill="#ffffff" stroke="#d9d5c6"/>
+
+                <rect x="0"   y="32" width="32" height="32" fill="#dbe6e3" stroke="#d9d5c6"/>
+                <rect x="32"  y="32" width="32" height="32" fill="#4a8a83" stroke="#d9d5c6"/>
+                <rect x="64"  y="32" width="32" height="32" fill="#0f5b54" stroke="#d9d5c6"/>
+                <rect x="96"  y="32" width="32" height="32" fill="#4a8a83" stroke="#d9d5c6"/>
+                <rect x="128" y="32" width="32" height="32" fill="#dbe6e3" stroke="#d9d5c6"/>
+
+                <rect x="0"   y="64" width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="32"  y="64" width="32" height="32" fill="#0f5b54" stroke="#d9d5c6"/>
+                <rect x="64"  y="64" width="32" height="32" fill="#0a3f3a" stroke="#d9d5c6" stroke-width="1.4"/>
+                <rect x="96"  y="64" width="32" height="32" fill="#0f5b54" stroke="#d9d5c6"/>
+                <rect x="128" y="64" width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+
+                <rect x="0"   y="96" width="32" height="32" fill="#dbe6e3" stroke="#d9d5c6"/>
+                <rect x="32"  y="96" width="32" height="32" fill="#4a8a83" stroke="#d9d5c6"/>
+                <rect x="64"  y="96" width="32" height="32" fill="#0f5b54" stroke="#d9d5c6"/>
+                <rect x="96"  y="96" width="32" height="32" fill="#4a8a83" stroke="#d9d5c6"/>
+                <rect x="128" y="96" width="32" height="32" fill="#dbe6e3" stroke="#d9d5c6"/>
+
+                <rect x="0"   y="128" width="32" height="32" fill="#ffffff" stroke="#d9d5c6"/>
+                <rect x="32"  y="128" width="32" height="32" fill="#dbe6e3" stroke="#d9d5c6"/>
+                <rect x="64"  y="128" width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="96"  y="128" width="32" height="32" fill="#dbe6e3" stroke="#d9d5c6"/>
+                <rect x="128" y="128" width="32" height="32" fill="#ffffff" stroke="#d9d5c6"/>
+              </g>
+              <!-- crown the brightest cell -->
+              <circle cx="80" cy="80" r="14" fill="none" stroke="#b94a23" stroke-width="2"/>
+              <line x1="80" y1="60" x2="80" y2="50" stroke="#b94a23" stroke-width="1.4"/>
+              <text x="80" y="44" text-anchor="middle" class="dg-label-mono" fill="#b94a23">max</text>
+              <text x="80" y="200" text-anchor="middle" class="dg-label-italic">single best elite</text>
+              <text x="80" y="218" text-anchor="middle" class="dg-label-mono dg-label-mute">= max F over cells</text>
+            </g>
+
+            <!-- THUMB 2: coverage -->
+            <g transform="translate(360,40)">
+              <text x="80" y="-12" text-anchor="middle" class="dg-label-mono">coverage</text>
+              <g>
+                <rect x="0"   y="0"   width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="32"  y="0"   width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="64"  y="0"   width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="96"  y="0"   width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="128" y="0"   width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+
+                <rect x="0"   y="32"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="32"  y="32"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="64"  y="32"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="96"  y="32"  width="32" height="32" fill="#ffffff" stroke="#d9d5c6"/>
+                <rect x="128" y="32"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+
+                <rect x="0"   y="64"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="32"  y="64"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="64"  y="64"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="96"  y="64"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="128" y="64"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+
+                <rect x="0"   y="96"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="32"  y="96"  width="32" height="32" fill="#ffffff" stroke="#d9d5c6"/>
+                <rect x="64"  y="96"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="96"  y="96"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="128" y="96"  width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+
+                <rect x="0"   y="128" width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="32"  y="128" width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="64"  y="128" width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="96"  y="128" width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+                <rect x="128" y="128" width="32" height="32" fill="#a5c4c0" stroke="#d9d5c6"/>
+              </g>
+              <text x="80" y="200" text-anchor="middle" class="dg-label-italic">% of cells filled</text>
+              <text x="80" y="218" text-anchor="middle" class="dg-label-mono dg-label-mute">= |occupied| / |cells|</text>
+            </g>
+
+            <!-- THUMB 3: QD score -->
+            <g transform="translate(660,40)">
+              <text x="80" y="-12" text-anchor="middle" class="dg-label-mono">QD-score</text>
+              <g>
+                <rect x="0"   y="0"  width="32" height="32" fill="#ffffff" stroke="#d9d5c6"/>
+                <rect x="32"  y="0"  width="32" height="32" fill="#bcd2cf" stroke="#d9d5c6"/>
+                <rect x="64"  y="0"  width="32" height="32" fill="#7da7a1" stroke="#d9d5c6"/>
+                <rect x="96"  y="0"  width="32" height="32" fill="#bcd2cf" stroke="#d9d5c6"/>
+                <rect x="128" y="0"  width="32" height="32" fill="#ffffff" stroke="#d9d5c6"/>
+
+                <rect x="0"   y="32" width="32" height="32" fill="#bcd2cf" stroke="#d9d5c6"/>
+                <rect x="32"  y="32" width="32" height="32" fill="#4a8a83" stroke="#d9d5c6"/>
+                <rect x="64"  y="32" width="32" height="32" fill="#0f5b54" stroke="#d9d5c6"/>
+                <rect x="96"  y="32" width="32" height="32" fill="#4a8a83" stroke="#d9d5c6"/>
+                <rect x="128" y="32" width="32" height="32" fill="#bcd2cf" stroke="#d9d5c6"/>
+
+                <rect x="0"   y="64" width="32" height="32" fill="#7da7a1" stroke="#d9d5c6"/>
+                <rect x="32"  y="64" width="32" height="32" fill="#0f5b54" stroke="#d9d5c6"/>
+                <rect x="64"  y="64" width="32" height="32" fill="#0a3f3a" stroke="#d9d5c6"/>
+                <rect x="96"  y="64" width="32" height="32" fill="#0f5b54" stroke="#d9d5c6"/>
+                <rect x="128" y="64" width="32" height="32" fill="#7da7a1" stroke="#d9d5c6"/>
+
+                <rect x="0"   y="96" width="32" height="32" fill="#bcd2cf" stroke="#d9d5c6"/>
+                <rect x="32"  y="96" width="32" height="32" fill="#4a8a83" stroke="#d9d5c6"/>
+                <rect x="64"  y="96" width="32" height="32" fill="#0f5b54" stroke="#d9d5c6"/>
+                <rect x="96"  y="96" width="32" height="32" fill="#4a8a83" stroke="#d9d5c6"/>
+                <rect x="128" y="96" width="32" height="32" fill="#bcd2cf" stroke="#d9d5c6"/>
+
+                <rect x="0"   y="128" width="32" height="32" fill="#ffffff" stroke="#d9d5c6"/>
+                <rect x="32"  y="128" width="32" height="32" fill="#bcd2cf" stroke="#d9d5c6"/>
+                <rect x="64"  y="128" width="32" height="32" fill="#7da7a1" stroke="#d9d5c6"/>
+                <rect x="96"  y="128" width="32" height="32" fill="#bcd2cf" stroke="#d9d5c6"/>
+                <rect x="128" y="128" width="32" height="32" fill="#ffffff" stroke="#d9d5c6"/>
+              </g>
+              <text x="80" y="200" text-anchor="middle" class="dg-label-italic">sum of all elite fitnesses</text>
+              <text x="80" y="218" text-anchor="middle" class="dg-label-mono dg-label-mute">= Σ F over occupied cells</text>
+            </g>
+          </svg>
+          <figcaption><strong>Fig. 5</strong>Three different questions you can ask of a repertoire. <em>Max fitness</em> is the classical RL metric — it ignores diversity. <em>Coverage</em> is the purest QD metric — it ignores quality. <em>QD-score</em> combines them by summing the fitness of every filled cell, rewarding both finding new niches and improving the elite within each niche. A method that wins on QD-score but loses on max-fitness has found a wide, shallow repertoire; the opposite means a narrow, sharp one.</figcaption>
+        </figure>
+      </div>
+
+      <h2><span class="h2-num">1.6</span> Where this leaves us</h2>
+
+      <p>
+        Three ingredients, and a loop that fits on one slide. The behavior descriptor decides what
+        counts as a niche. The variation operator decides how new candidates are proposed. The
+        one-cell-one-elite rule decides what gets kept. Run that loop for a few hundred thousand
+        iterations and you have an archive — a structured catalogue of high-performing,
+        behaviorally distinct solutions. That archive is, end-to-end, the output of the algorithm.
+      </p>
+
+      <p>
+        Everything the paper does is downstream of this. It does not invent new descriptors. It
+        does not invent a new variation operator. What it does is replace one specific
+        sub-routine — the part that turns a sampled parent into an improved offspring — with
+        something a lot more powerful than additive noise, and a lot more carefully managed than a
+        single fixed RL training run. Part 02 is about the lineage of attempts to do that, and the
+        problems each attempt introduced.
+      </p>
+
+      <div class="callout teal">
+        <span class="label">Take-home before part 02</span>
+        <p>
+          MAP-Elites is a generic search frame. It will keep, score, and combine whatever you give
+          it. The hard question is no longer <em>"how do we search the space of solutions"</em> —
+          MAP-Elites answers that — but <em>"how do we get high-quality candidates to feed it,
+          when each candidate is a deep neural network that needs millions of environment steps to
+          become useful?"</em> That is exactly the question the next page is about.
+        </p>
+      </div>
+
+    </main>
+
+    <nav class="learn-nav" aria-label="Continue">
+      <a href="../index.html" class="prev">
+        <span class="lab">&larr; Project page</span>
+        <span class="ttl">Back to the deliverable</span>
+      </a>
+      <a href="02-rl-meets-mapelites.html" class="next">
+        <span class="lab">Part 02 &rarr;</span>
+        <span class="ttl">RL meets MAP-Elites: a lineage</span>
+      </a>
+    </nav>
+
+    <footer class="learn-footer">
+      <p>CS410.Q21 final-project explainer &middot; Part 01 of 3 &middot; <a href="../index.html">return to project page</a></p>
+    </footer>
+
+  </body>
+</html>

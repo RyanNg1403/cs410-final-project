@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>2. RL meets MAP-Elites — PBT-MAP-Elites explainer</title>
+    <meta name="description" content="The lineage of attempts to combine deep RL with MAP-Elites, and the four downsides that motivated PBT-MAP-Elites.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Castoro:ital@0;1&family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="learn.css">
+  </head>
+  <body>
+
+    <header class="learn-header">
+      <a class="brand" href="../index.html"><span>CS410.Q21</span><span class="brand-divider">·</span><span>Explainer</span></a>
+      <nav class="crumbs" aria-label="Pages">
+        <a href="01-quality-diversity.html"><span class="step-num">01</span>Primitives</a>
+        <a href="02-rl-meets-mapelites.html" class="is-current"><span class="step-num">02</span>Lineage</a>
+        <a href="03-pbt-mapelites.html"><span class="step-num">03</span>PBT-MAP-Elites</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow"><span class="part-num">02</span>Lineage</p>
+      <h1 class="title">When random noise stops scaling.</h1>
+      <p class="subtitle">
+        MAP-Elites is the search frame; deep RL is the source of high-quality candidates. The
+        story of the last five years is the slowly-discovered cost of bolting them together. This
+        page tells that story so the paper's solution makes sense.
+      </p>
+      <div class="hero-meta">
+        <div><strong>Read time</strong>10 minutes</div>
+        <div><strong>You will learn</strong>Why random mutation fails · Three RL-augmented MAP-Elites variants · The four downsides they inherit · What PBT solves</div>
+        <div><strong>Builds on</strong>Part 01 (Primitives)</div>
+      </div>
+    </section>
+
+    <main class="article">
+
+      <h2><span class="h2-num">2.1</span> The size problem</h2>
+
+      <p>
+        Picture a robot controller as a vector. Forty years ago that vector might have held a
+        dozen numbers — joint gains, a few timing constants, perhaps a feedback offset.
+        Hand-tuning that vector was reasonable. Searching it by random mutation was reasonable.
+        And running pure MAP-Elites on it, the way Mouret &amp; Clune did, produced beautiful
+        results: a hexapod that learned to walk in dozens of distinct gaits, including ones that
+        kept working after a leg was broken.
+      </p>
+
+      <p>
+        Modern neural-network policies are not those vectors. A small actor-critic for HalfCheetah
+        has on the order of <span class="bb">10⁵</span> trainable parameters. Humanoid pushes
+        towards <span class="bb">10⁶</span>. The descriptor space remains low-dimensional —
+        usually two or three — but the parameter space has exploded. And in that exploded space,
+        most random perturbations of a good policy produce a terrible one.
+      </p>
+
+      <div class="margin-fig">
+        <figure class="figure">
+          <svg viewBox="0 0 240 220" role="img" aria-label="Two scatter plots showing random mutations spreading in 2D versus high-D, with most high-D mutations missing the good region.">
+            <rect x="0" y="0" width="240" height="220" fill="none"/>
+
+            <!-- LOW-D side -->
+            <text x="60" y="20" text-anchor="middle" class="dg-label-mono">low-d</text>
+            <g transform="translate(60,110)">
+              <!-- good region: small disk -->
+              <circle cx="0" cy="0" r="36" fill="#dbe6e3" stroke="#0f5b54" stroke-dasharray="3 3"/>
+              <text x="0" y="50" text-anchor="middle" class="dg-label-italic dg-label-mute">good</text>
+              <!-- parent -->
+              <circle cx="0" cy="0" r="3" class="dg-fill-link"/>
+              <!-- mutations -->
+              <g class="dg-fill-mute">
+                <circle cx="-22" cy="-8" r="2"/>
+                <circle cx="14"  cy="-18" r="2"/>
+                <circle cx="-8"  cy="20"  r="2"/>
+                <circle cx="22"  cy="10"  r="2"/>
+                <circle cx="6"   cy="-26" r="2"/>
+              </g>
+            </g>
+            <text x="60" y="185" text-anchor="middle" class="dg-label-mono dg-label-mute">most land near parent</text>
+            <text x="60" y="200" text-anchor="middle" class="dg-label-mono dg-label-mute">→ inside the good ball</text>
+
+            <!-- HIGH-D side -->
+            <text x="180" y="20" text-anchor="middle" class="dg-label-mono">high-d</text>
+            <g transform="translate(180,110)">
+              <circle cx="0" cy="0" r="14" fill="#dbe6e3" stroke="#0f5b54" stroke-dasharray="3 3"/>
+              <text x="0" y="28" text-anchor="middle" class="dg-label-italic dg-label-mute">good</text>
+              <circle cx="0" cy="0" r="3" class="dg-fill-link"/>
+              <g class="dg-fill-mute">
+                <circle cx="-32" cy="-22" r="2"/>
+                <circle cx="-18" cy="34"  r="2"/>
+                <circle cx="36"  cy="6"   r="2"/>
+                <circle cx="20"  cy="-30" r="2"/>
+                <circle cx="-28" cy="14"  r="2"/>
+                <circle cx="2"   cy="-38" r="2"/>
+                <circle cx="-4"  cy="40"  r="2"/>
+                <circle cx="34"  cy="-14" r="2"/>
+              </g>
+            </g>
+            <text x="180" y="185" text-anchor="middle" class="dg-label-mono dg-label-mute">most miss entirely</text>
+            <text x="180" y="200" text-anchor="middle" class="dg-label-mono dg-label-mute">→ wasted evaluations</text>
+          </svg>
+          <figcaption><strong>Fig. 6</strong>The "good" region around a parent occupies a fixed share of a 2D ball but a vanishingly small share of a 10⁵-D ball. Isotropic noise that worked in low dimensions becomes a coupon book of mostly-blank tickets.</figcaption>
+        </figure>
+      </div>
+
+      <p>
+        Concretely, isoline variation is a partial fix: pulling offspring along the line between
+        two known-good parents anchors them in a sensible direction. But it still relies on
+        chance. To compete with end-to-end deep RL on raw fitness, MAP-Elites needs a way to
+        <em>actively improve</em> a candidate policy with respect to the reward signal — not just
+        roll a dice and check.
+      </p>
+
+      <p>
+        That is the opening that RL-augmented MAP-Elites methods walked through. The structure of
+        every one of them is the same: keep MAP-Elites' archive and competition rule, but replace
+        — or augment — the variation step with a few RL gradient updates. Three of these methods
+        matter for the paper. Each adds capability; each adds a problem.
+      </p>
+
+      <h2><span class="h2-num">2.2</span> The lineage in three steps</h2>
+
+      <div class="wide-fig">
+        <figure class="figure">
+          <svg viewBox="0 0 880 280" role="img" aria-label="A timeline showing four methods: MAP-Elites (2015), ME-ES (2020), PGA-MAP-Elites (2021), QD-PG (2022), with PBT-MAP-Elites at 2023.">
+            <rect x="0" y="0" width="880" height="280" fill="none"/>
+
+            <!-- timeline -->
+            <line x1="40" y1="140" x2="840" y2="140" stroke="#d9d5c6" stroke-width="2"/>
+
+            <!-- nodes -->
+            <g>
+              <!-- 2015 ME -->
+              <circle cx="80" cy="140" r="7" fill="#fbfaf6" stroke="#7a7565" stroke-width="2"/>
+              <text x="80" y="170" text-anchor="middle" class="dg-label-mono">2015</text>
+              <text x="80" y="100" text-anchor="middle" class="dg-label-italic">MAP-Elites</text>
+              <text x="80" y="84"  text-anchor="middle" class="dg-label-mono dg-label-mute">random mutation</text>
+
+              <!-- 2020 ME-ES -->
+              <circle cx="280" cy="140" r="7" fill="#fbfaf6" stroke="#7a7565" stroke-width="2"/>
+              <text x="280" y="170" text-anchor="middle" class="dg-label-mono">2020</text>
+              <text x="280" y="100" text-anchor="middle" class="dg-label-italic">ME-ES</text>
+              <text x="280" y="84"  text-anchor="middle" class="dg-label-mono dg-label-mute">evolution-strategy grads</text>
+
+              <!-- 2021 PGA-ME -->
+              <circle cx="440" cy="140" r="7" fill="#fbfaf6" stroke="#b94a23" stroke-width="2"/>
+              <text x="440" y="170" text-anchor="middle" class="dg-label-mono">2021</text>
+              <text x="440" y="100" text-anchor="middle" class="dg-label-italic" fill="#b94a23">PGA-MAP-Elites</text>
+              <text x="440" y="84"  text-anchor="middle" class="dg-label-mono dg-label-mute">TD3 policy grads</text>
+
+              <!-- 2022 QD-PG -->
+              <circle cx="620" cy="140" r="7" fill="#fbfaf6" stroke="#b94a23" stroke-width="2"/>
+              <text x="620" y="170" text-anchor="middle" class="dg-label-mono">2022</text>
+              <text x="620" y="100" text-anchor="middle" class="dg-label-italic" fill="#b94a23">QD-PG</text>
+              <text x="620" y="84"  text-anchor="middle" class="dg-label-mono dg-label-mute">quality + diversity grads</text>
+
+              <!-- 2023 PBT-ME (our paper, highlighted) -->
+              <circle cx="800" cy="140" r="9" fill="#b94a23" stroke="#14140f" stroke-width="2"/>
+              <text x="800" y="170" text-anchor="middle" class="dg-label-mono" fill="#b94a23">2023</text>
+              <text x="800" y="100" text-anchor="middle" class="dg-label-italic" fill="#b94a23">PBT-MAP-Elites</text>
+              <text x="800" y="84"  text-anchor="middle" class="dg-label-mono dg-label-mute">evolves whole agents</text>
+              <text x="800" y="200" text-anchor="middle" class="dg-label-mono" fill="#b94a23">← this paper</text>
+            </g>
+
+            <!-- annotation: the RL era -->
+            <path d="M 270 220 L 270 240 L 630 240 L 630 220" stroke="#0f5b54" fill="none" stroke-width="1.2"/>
+            <text x="450" y="258" text-anchor="middle" class="dg-label-italic" fill="#0f5b54">RL-augmented MAP-Elites era</text>
+          </svg>
+          <figcaption><strong>Fig. 7</strong>A short timeline. Pure MAP-Elites (2015) plateaued on deep policies. The 2020 – 2022 line of work injected gradient information — first via Evolution Strategies, then via off-policy RL — and reached state-of-the-art performance on continuous-control QD benchmarks. The paper of interest sits at the right end of the line.</figcaption>
+        </figure>
+      </div>
+
+      <h3>Step one: gradient information from rollouts (ME-ES, 2020)</h3>
+
+      <p>
+        Colas et al. proposed updating each repertoire entry with Evolution-Strategies-style
+        gradients. The recipe is unchanged at the algorithm level — sample a parent, mutate,
+        evaluate, compete — except that "mutate" now means: perturb the parent with a cloud of
+        Gaussian samples, evaluate them all, and take a smoothed gradient estimate that points
+        towards higher fitness (or towards novelty, or a mix). ME-ES is a real advance over
+        random mutation, but it pays in samples: each gradient step costs an entire batch of
+        rollouts. The paper reports that ME-ES typically needs <em>two orders of magnitude</em>
+        more environment interactions to reach the same fitness as gradient-based methods.
+      </p>
+
+      <h3>Step two: borrow the off-policy actor-critic (PGA-MAP-Elites, 2021)</h3>
+
+      <p>
+        Nilsson &amp; Cully made the natural follow-up: skip ES, use a proper RL algorithm. They
+        bolt the TD3 actor-critic onto MAP-Elites. Each iteration, half of the new offspring are
+        produced by the isoline operator (the classical move) and the other half by running a few
+        gradient steps of TD3 starting from a sampled archive parent. A single critic and a
+        single replay buffer are shared across the entire population.
+      </p>
+
+      <h3>Step three: split the gradient into quality + diversity (QD-PG, 2022)</h3>
+
+      <p>
+        Pierrot et al. extend PGA-MAP-Elites with a per-timestep <em>diversity reward</em> — a
+        signal at each environment step that encourages the trajectory to head into unexplored
+        regions of descriptor space. QD-PG runs two critics (one for quality, one for diversity);
+        half of the gradient updates use the quality critic, half the diversity critic. The
+        result outperforms PGA-MAP-Elites on the harder, trap-style environments.
+      </p>
+
+      <p>
+        These three methods are the immediate ancestors. They make MAP-Elites work on deep-RL
+        problems. They also inherit, between them, four distinct downsides that the paper
+        addresses head-on.
+      </p>
+
+      <h2><span class="h2-num">2.3</span> What gets shared, and why it costs</h2>
+
+      <p>
+        Look closely at PGA-MAP-Elites and QD-PG and you find an architectural commitment that
+        was not there in plain MAP-Elites: <em>components shared across the population</em>.
+        Sharing was justified on sample-efficiency grounds. A single replay buffer pooling
+        experience from all policies needs less wall-clock time to give the TD3 critic enough
+        training signal. A single critic shared by all policies amortizes the cost of fitting it.
+        The decision is reasonable. It is also, the paper argues, the root of several problems.
+      </p>
+
+      <div class="wide-fig">
+        <figure class="figure">
+          <svg viewBox="0 0 880 340" role="img" aria-label="A diagram showing many policies sharing a single critic and a single replay buffer, with arrows indicating bottlenecks.">
+            <rect x="0" y="0" width="880" height="340" fill="none"/>
+            <text x="440" y="28" text-anchor="middle" class="dg-label-mono">PGA-MAP-Elites &amp; QD-PG: shared components</text>
+
+            <!-- policies -->
+            <g transform="translate(60,80)">
+              <text x="0" y="-12" class="dg-label-mono dg-label-mute">repertoire policies</text>
+              <g>
+                <rect x="0"   y="0"  width="60" height="40" fill="#fbfaf6" stroke="#7a7565"/>
+                <text x="30"  y="25" text-anchor="middle" class="dg-label-mono">π₁</text>
+                <rect x="0"   y="50" width="60" height="40" fill="#fbfaf6" stroke="#7a7565"/>
+                <text x="30"  y="75" text-anchor="middle" class="dg-label-mono">π₂</text>
+                <rect x="0"   y="100" width="60" height="40" fill="#fbfaf6" stroke="#7a7565"/>
+                <text x="30"  y="125" text-anchor="middle" class="dg-label-mono">π₃</text>
+                <text x="30"  y="160" text-anchor="middle" class="dg-label-italic dg-label-mute">…</text>
+                <rect x="0"   y="170" width="60" height="40" fill="#fbfaf6" stroke="#7a7565"/>
+                <text x="30"  y="195" text-anchor="middle" class="dg-label-mono">πₙ</text>
+              </g>
+            </g>
+
+            <!-- arrows to shared buffer -->
+            <g stroke="#7a7565" fill="none" stroke-width="1">
+              <path d="M 122 100 C 200 100, 240 110, 340 120"/>
+              <path d="M 122 150 C 200 150, 240 145, 340 130"/>
+              <path d="M 122 195 C 200 200, 240 175, 340 140"/>
+              <path d="M 122 245 C 200 245, 240 200, 340 150"/>
+            </g>
+            <!-- shared buffer -->
+            <g transform="translate(340,90)">
+              <rect x="0" y="0" width="180" height="100" fill="#dbe6e3" stroke="#0f5b54" stroke-width="1.2"/>
+              <text x="90" y="36" text-anchor="middle" class="dg-label-mono" fill="#0f5b54">shared replay buffer</text>
+              <text x="90" y="56" text-anchor="middle" class="dg-label-italic" fill="#0f5b54">one for all of them</text>
+              <text x="90" y="76" text-anchor="middle" class="dg-label-mono dg-label-mute">transitions from every π_i</text>
+            </g>
+
+            <!-- arrow to shared critic -->
+            <line x1="520" y1="140" x2="580" y2="140" stroke="#7a7565" stroke-width="1"/>
+            <polygon points="580,140 572,135 572,145" class="dg-fill-mute"/>
+
+            <!-- shared critic -->
+            <g transform="translate(580,90)">
+              <rect x="0" y="0" width="180" height="100" fill="#dbe6e3" stroke="#0f5b54" stroke-width="1.2"/>
+              <text x="90" y="36" text-anchor="middle" class="dg-label-mono" fill="#0f5b54">shared critic Q(s,a)</text>
+              <text x="90" y="56" text-anchor="middle" class="dg-label-italic" fill="#0f5b54">one for all of them</text>
+              <text x="90" y="76" text-anchor="middle" class="dg-label-mono dg-label-mute">fitted on the shared buffer</text>
+            </g>
+
+            <!-- annotations -->
+            <text x="440" y="240" text-anchor="middle" class="dg-label-italic" fill="#b94a23">a small number of bottleneck objects</text>
+            <text x="440" y="258" text-anchor="middle" class="dg-label-mono dg-label-mute">— sample-efficient on a single machine,</text>
+            <text x="440" y="274" text-anchor="middle" class="dg-label-mono dg-label-mute">— but they prevent embarrassingly-parallel training,</text>
+            <text x="440" y="290" text-anchor="middle" class="dg-label-mono dg-label-mute">— and they tie the algorithm to one specific RL implementation.</text>
+            <text x="440" y="306" text-anchor="middle" class="dg-label-mono dg-label-mute">If the critic is wrong about a policy that's rarely updated,</text>
+            <text x="440" y="322" text-anchor="middle" class="dg-label-mono dg-label-mute">that policy can drift for a long time before anyone notices.</text>
+          </svg>
+          <figcaption><strong>Fig. 8</strong>The architectural choice that sharpens PGA-MAP-Elites' sample efficiency also chokes its parallelism. The single critic must be updated from one place; the single replay buffer must be a single object in memory; everything depends on everything.</figcaption>
+        </figure>
+      </div>
+
+      <h2><span class="h2-num">2.4</span> The four downsides</h2>
+
+      <p>
+        The paper enumerates them explicitly in its introduction. They are worth pinning to the
+        wall, because the proposed solution is engineered specifically against each one.
+      </p>
+
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            <th style="width: 22%">Downside</th>
+            <th>What it actually means</th>
+            <th>Where it bites</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>(i)</strong> Hyperparameter sensitivity</td>
+            <td>The TD3 (or SAC) inside is a fragile object — learning rate, exploration noise, target-update rate all need careful tuning. A setting that works on HalfCheetah is not the setting that works on HumanoidTrap.</td>
+            <td>You spend a day tuning before each new environment.</td>
+          </tr>
+          <tr>
+            <td><strong>(ii)</strong> Training instability</td>
+            <td>RL is famously high-variance. Sharing a critic across hundreds of policies amplifies that: a bad batch on the critic poisons updates for everyone for the next many iterations.</td>
+            <td>Two runs with the same hyperparameters can end up with archives that look like they were searched by different algorithms.</td>
+          </tr>
+          <tr>
+            <td><strong>(iii)</strong> Low parallelism</td>
+            <td>Shared replay buffer + shared critic = a serial bottleneck. You cannot put each policy's gradient updates on a separate accelerator.</td>
+            <td>Wall-clock training time fails to scale even when GPUs are available.</td>
+          </tr>
+          <tr>
+            <td><strong>(iv)</strong> RL-algorithm coupling</td>
+            <td>The variation step is hard-wired to TD3 (PGA-MAP-Elites) or to TD3 + a diversity reward (QD-PG). If TD3 cannot solve your environment, neither can these methods.</td>
+            <td>HumanoidTrap. TD3 famously cannot run Humanoid out-of-the-box; the original TD3 paper does not even attempt it.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout amber">
+        <span class="label">The downside that hurts most</span>
+        <p>
+          The first three downsides are engineering problems — annoying, sometimes expensive, but
+          you can paper over them with compute and patience. The fourth is structural: it says
+          your QD method <em>cannot fix what TD3 cannot fix</em>. The paper opens its abstract by
+          flagging exactly this: <em>"existing approaches mixing ME with RL tend to be tied to a
+          specific RL algorithm, which effectively prevents their use on problems where the
+          corresponding RL algorithm fails."</em>
+        </p>
+      </div>
+
+      <h2><span class="h2-num">2.5</span> Where PBT comes in</h2>
+
+      <p>
+        Population-Based Training (Jaderberg et al., 2017) is the other ancestor the paper
+        inherits from. It was invented for a completely different problem — finding good
+        hyperparameters for a single RL agent — but its mechanics happen to be exactly what
+        downsides (i) and (ii) need.
+      </p>
+
+      <p>
+        The PBT idea, briefly. You train not one agent but a population of, say, twenty agents in
+        parallel, each with its own randomly-sampled hyperparameter setting. Every so often you
+        rank them. The bottom <span class="bb">p%</span> of agents are <em>replaced</em> by copies
+        of agents from the top <span class="bb">n%</span>. When an agent is replaced, its
+        hyperparameters are <em>perturbed</em> or re-sampled. Training resumes. Repeat.
+      </p>
+
+      <div class="margin-fig">
+        <figure class="figure">
+          <svg viewBox="0 0 240 280" role="img" aria-label="Bars showing weak agents being replaced by strong ones with new hyperparameters, over time.">
+            <rect x="0" y="0" width="240" height="280" fill="none"/>
+            <text x="120" y="22" text-anchor="middle" class="dg-label-mono">PBT, one iteration</text>
+
+            <!-- before -->
+            <text x="60" y="50" text-anchor="middle" class="dg-label-mono dg-label-mute">before</text>
+            <!-- 6 vertical bars representing fitnesses -->
+            <g transform="translate(20,80)" stroke="#14140f" stroke-width="1">
+              <rect x="0"  y="38" width="14" height="40" fill="#dbe6e3"/>
+              <rect x="16" y="20" width="14" height="58" fill="#7da7a1"/>
+              <rect x="32" y="50" width="14" height="28" fill="#dbe6e3"/>
+              <rect x="48" y="6"  width="14" height="72" fill="#0f5b54"/>
+              <rect x="64" y="34" width="14" height="44" fill="#a5c4c0"/>
+              <rect x="80" y="12" width="14" height="66" fill="#0f5b54"/>
+            </g>
+            <text x="100" y="180" class="dg-label-italic dg-label-mute">↓ rank, replace bottom 20%</text>
+
+            <!-- after -->
+            <text x="180" y="50" text-anchor="middle" class="dg-label-mono dg-label-mute">after</text>
+            <g transform="translate(140,80)" stroke="#14140f" stroke-width="1">
+              <rect x="0"  y="6"  width="14" height="72" fill="#0f5b54"/>
+              <rect x="16" y="20" width="14" height="58" fill="#7da7a1"/>
+              <rect x="32" y="12" width="14" height="66" fill="#0f5b54"/>
+              <rect x="48" y="6"  width="14" height="72" fill="#0f5b54"/>
+              <rect x="64" y="34" width="14" height="44" fill="#a5c4c0"/>
+              <rect x="80" y="12" width="14" height="66" fill="#0f5b54"/>
+            </g>
+
+            <!-- arrows showing the replacement -->
+            <g stroke="#b94a23" stroke-width="1" fill="none" stroke-dasharray="3 3">
+              <path d="M 68 158 C 100 160, 140 158, 145 160"/>
+              <path d="M 100 158 C 110 168, 130 170, 178 170"/>
+            </g>
+
+            <text x="120" y="232" text-anchor="middle" class="dg-label-italic" fill="#b94a23">+ resample their hyperparameters</text>
+            <text x="120" y="250" text-anchor="middle" class="dg-label-mono dg-label-mute">new lr, new noise, new γ, …</text>
+          </svg>
+          <figcaption><strong>Fig. 9</strong>One PBT iteration. The weakest agents get replaced by clones of the strongest, but with fresh hyperparameters. Hyperparameter search and training are now the same loop.</figcaption>
+        </figure>
+      </div>
+
+      <p>
+        The trick to PBT is that hyperparameter search is no longer a separate, expensive,
+        outer-loop wrapper around training. It's <em>part of</em> training. Strong
+        hyperparameters propagate, weak ones get replaced, and the entire population sweeps the
+        hyperparameter landscape while it sweeps the reward landscape.
+      </p>
+
+      <p>
+        That solves downsides (i) and (ii) at a stroke: you no longer hand-tune; instability gets
+        smoothed by the population. And by training each agent independently — no shared
+        critic, no shared buffer — PBT is embarrassingly parallel. Each member runs on its own
+        accelerator. Downsides (i), (ii), (iii) addressed.
+      </p>
+
+      <p>
+        What PBT does <em>not</em> give you is diversity. It optimizes for the best single agent,
+        with the population playing the role of a hyperparameter-search auxiliary. Coverage of
+        behaviorally-distinct solutions is not on the agenda.
+      </p>
+
+      <h2><span class="h2-num">2.6</span> The synthesis the paper proposes</h2>
+
+      <p>
+        Two algorithms, each missing what the other supplies.
+      </p>
+
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>MAP-Elites (and its RL-augmented descendants)</th>
+            <th>PBT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Maintains diversity</strong></td>
+            <td><span class="yes">yes — that's the entire point</span></td>
+            <td><span class="no">no</span></td>
+          </tr>
+          <tr>
+            <td><strong>Adapts hyperparameters online</strong></td>
+            <td><span class="no">no — they are fixed for the run</span></td>
+            <td><span class="yes">yes — that's the entire point</span></td>
+          </tr>
+          <tr>
+            <td><strong>Trivially parallel</strong></td>
+            <td><span class="no">no for RL-augmented variants (shared critic)</span></td>
+            <td><span class="yes">yes — agents train independently</span></td>
+          </tr>
+          <tr>
+            <td><strong>Agnostic to inner RL algorithm</strong></td>
+            <td><span class="no">no — coupled to TD3 in PGA-ME / QD-PG</span></td>
+            <td><span class="yes">yes — wraps any RL algorithm as a black box</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The paper's proposal is what you'd guess from the table: braid them together. Keep
+        MAP-Elites' archive and competition rule. Replace the variation step with a PBT-style
+        loop over a small population of full RL agents — each agent independent, each with its
+        own hyperparameters that PBT-evolves over training. Use the inner RL algorithm of your
+        choice (the paper tries both SAC and TD3). Insert the agents into the repertoire as
+        usual.
+      </p>
+
+      <p>
+        Doing that cleanly requires one more change, which the paper makes carefully and which we
+        will spend Part 03 unpacking: <em>what gets evolved</em> by the population is no longer
+        just policy weights. It is the entire agent — policy <em>and</em> critic <em>and</em>
+        replay buffer <em>and</em> hyperparameters — treated as one bundled object that PBT
+        copies, mutates, and inserts. The bundling is what makes the algorithm agnostic to the
+        inner RL choice; the per-agent independence is what makes it parallel; the PBT loop is
+        what makes it robust to hyperparameters.
+      </p>
+
+      <div class="callout teal">
+        <span class="label">Pin this</span>
+        <p>
+          PBT-MAP-Elites is not a new optimizer. It is the MAP-Elites loop you already know,
+          plus the PBT loop you already know, with a precise glue layer between them. Part 03
+          shows what the glue actually looks like and why the result is more than the sum of
+          its parts.
+        </p>
+      </div>
+
+    </main>
+
+    <nav class="learn-nav" aria-label="Continue">
+      <a href="01-quality-diversity.html" class="prev">
+        <span class="lab">&larr; Part 01</span>
+        <span class="ttl">Quality, Diversity, MAP-Elites</span>
+      </a>
+      <a href="03-pbt-mapelites.html" class="next">
+        <span class="lab">Part 03 &rarr;</span>
+        <span class="ttl">PBT-MAP-Elites: the paper's contribution</span>
+      </a>
+    </nav>
+
+    <footer class="learn-footer">
+      <p>CS410.Q21 final-project explainer &middot; Part 02 of 3 &middot; <a href="../index.html">return to project page</a></p>
+    </footer>
+
+  </body>
+</html>
