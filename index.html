@@ -31,6 +31,7 @@
         <a href="#experiments">Experiments</a>
         <a href="#videos">Rollouts</a>
         <a href="#results">Results</a>
+        <a href="#reproduction">Reproduction</a>
         <a href="#bibtex">BibTeX</a>
       </nav>
     </header>
@@ -207,12 +208,22 @@
             inner learner is SAC or TD3.
           </p>
           <p>
-            The training loop alternates between (i) collecting experience and
-            running gradient steps for every agent in the population, and
-            (ii) evaluating each agent's behavior descriptor and competing it
-            into the archive cell it lands in. Hyperparameters of strong cells
-            are inherited by weak ones — population-based training, but with
-            diversity as the selection criterion.
+            The training loop alternates between two updates. The
+            <strong>population update</strong> ranks the current agents by
+            fitness: the bottom <em>p</em>% are replaced by copies of agents
+            sampled from the top <em>n</em>%, and a fraction <em>k</em> of
+            the middle band is replaced by random samples from the
+            MAP-Elites repertoire. When agents are replaced, their
+            hyperparameters are <strong>resampled</strong> from a
+            pre-specified range — they are not copied from the strong
+            agents. The <strong>repertoire update</strong> then runs the
+            usual MAP-Elites step: pick a parent from the repertoire, apply
+            the isoline variation operator to its policy and learnable
+            parameters (offspring <em>do</em> inherit the parent's
+            hyperparameters here), evaluate, and insert into the descriptor
+            cell. Diversity comes from the archive, fitness from the RL
+            inner loop, and exploration over the hyperparameter space comes
+            from the population update.
           </p>
         </div>
       </section>
@@ -260,7 +271,13 @@
       <section id="videos" class="section" aria-labelledby="videos-h">
         <h2 id="videos-h">4. Rollout videos</h2>
         <p class="section-lede">
-          Representative agents drawn from the archive. Filter by task family;
+          Representative agents drawn from the PBT-MAP-Elites archive across
+          three tasks. The cards tagged with explicit fitness and
+          behavior-descriptor values (<em>fit&hairsp;…</em>, <em>bd&hairsp;…</em>)
+          are individual archive cells from our reproduction runs — see the
+          <a href="#reproduction">reproduction manifest</a> below for their
+          provenance. The remaining cards are demonstration rollouts
+          unconnected to a specific archive cell. Filter by task family;
           starting one video pauses the others.
         </p>
 
@@ -294,6 +311,45 @@
               <p class="card-tag">HalfCheetah-Uni · descriptor 0.587</p>
               <h3>Alternative archive gait</h3>
               <p>A different cell in the descriptor archive — same task, different contact pattern.</p>
+            </div>
+          </article>
+
+          <article class="video-card" data-category="locomotion">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/walker2d-archive-best.jpg">
+                <source src="assets/videos/walker2d-archive-best.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">Walker2d-Uni · best elite · fit&nbsp;1383, bd&nbsp;(0.51,&nbsp;0.85)</p>
+              <h3>Highest-fitness biped gait</h3>
+              <p>The archive's top elite — a balanced bipedal gait with foot-contact descriptor (0.51,&nbsp;0.85).</p>
+            </div>
+          </article>
+
+          <article class="video-card" data-category="locomotion">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/walker2d-archive-gait-low.jpg">
+                <source src="assets/videos/walker2d-archive-gait-low.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">Walker2d-Uni · cell idx&nbsp;52 · fit&nbsp;1206, bd&nbsp;(0.28,&nbsp;0.90)</p>
+              <h3>Low-contact gait variant</h3>
+              <p>A different cell of the descriptor archive — foot&nbsp;1 spends much less time in contact than the best elite, producing a visibly different gait.</p>
+            </div>
+          </article>
+
+          <article class="video-card" data-category="locomotion">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/walker2d-archive-gait-high.jpg">
+                <source src="assets/videos/walker2d-archive-gait-high.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">Walker2d-Uni · cell idx&nbsp;238 · fit&nbsp;1044, bd&nbsp;(1.00,&nbsp;0.65)</p>
+              <h3>High-contact gait variant</h3>
+              <p>Opposite corner of the descriptor space — foot&nbsp;1 is in contact nearly all the time. Lower fitness, but very different motor pattern.</p>
             </div>
           </article>
 
@@ -335,6 +391,45 @@
               <p>A shorter rollout where the agent commits to a direct path through.</p>
             </div>
           </article>
+
+          <article class="video-card" data-category="trap">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/anttrap-escape-up.jpg">
+                <source src="assets/videos/anttrap-escape-up.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">AntTrap · escape · fit&nbsp;1472, bd&nbsp;(30.0,&nbsp;+6.4)</p>
+              <h3>Trap escape, northern path</h3>
+              <p>The archive's best AntTrap elite. The agent skirts the obstacle to the upper side and reaches the maximum x distance — the goal MAP-Elites is designed to discover.</p>
+            </div>
+          </article>
+
+          <article class="video-card" data-category="trap">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/anttrap-escape-down.jpg">
+                <source src="assets/videos/anttrap-escape-down.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">AntTrap · escape · fit&nbsp;1418, bd&nbsp;(29.5,&nbsp;−8.0)</p>
+              <h3>Trap escape, southern path</h3>
+              <p>A second-best elite that escapes by the opposite side. Same task, mirrored solution — direct evidence that the archive preserves alternative escape strategies.</p>
+            </div>
+          </article>
+
+          <article class="video-card" data-category="trap">
+            <div class="video-wrap">
+              <video controls preload="metadata" poster="assets/posters/anttrap-stuck.jpg">
+                <source src="assets/videos/anttrap-stuck.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="video-meta">
+              <p class="card-tag">AntTrap · stuck · fit&nbsp;379, bd&nbsp;(0.0,&nbsp;−8.0)</p>
+              <h3>The deceptive local optimum</h3>
+              <p>A low-fitness cell that never crossed the obstacle (final x&nbsp;=&nbsp;0). This is exactly the failure mode reward-only baselines collapse into — the archive keeps it on hand as evidence the search did probe the trap region.</p>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -342,36 +437,131 @@
       <section id="results" class="section" aria-labelledby="results-h">
         <h2 id="results-h">5. Results</h2>
         <p class="section-lede">
-          PBT-MAP-Elites improves both QD score and archive coverage over a
+          PBT-MAP-Elites improves QD score and archive coverage over a
           population-based-training baseline that does not maintain a diversity
-          archive.
+          archive — in all five environments except HumanoidTrap, where the
+          two methods are comparable on coverage but PBT-MAP-Elites (SAC)
+          wins decisively on maximum fitness (it is the only method that
+          solves HumanoidTrap within the paper's budget).
         </p>
 
         <figure class="figure">
-          <img src="assets/results.png" alt="Performance comparison across five QDax/Brax environments.">
+          <img src="assets/results.png" alt="AntTrap repertoire snapshots showing fitness and adapted hyperparameters at four training time points.">
           <figcaption>
-            <strong>Figure 2.</strong> QD score and coverage across the five QDax/Brax
-            benchmark environments. The SAC variant of PBT-MAP-Elites solves
-            HumanoidTrap within budget, a known failure mode for evolutionary
-            baselines without explicit diversity pressure. Reproduced from
-            Flajolet &amp; Pierrot (2023).
+            <strong>Figure 3 (from the paper).</strong> Snapshots of the
+            PBT-MAP-Elites (TD3) repertoire on AntTrap at four training time
+            points. Top row: fitness per archive cell. Middle row: the
+            exploration-noise hyperparameter that PBT adapted per cell.
+            Bottom row: the discount factor <em>γ</em> per cell. The takeaway
+            the authors highlight from this figure is that PBT does
+            <em>not</em> learn a single global hyperparameter setting — it
+            learns locally-coherent maps of hyperparameters that change as
+            training progresses, increasing exploration when the agents need
+            to get around the trap and decreasing it once they have. The
+            figure is reproduced from Flajolet &amp; Pierrot (2023, Fig. 3).
           </figcaption>
         </figure>
 
         <div class="prose">
           <p>
-            The takeaway for the course is that the diversity pressure is not
-            ornamental. It is what lets the population escape the deceptive
-            local optima that defeat reward-only search. When the archive is
-            removed, the population still trains — it just collapses onto a
-            single mode.
+            The takeaway for the course is twofold. First, the diversity
+            pressure is not ornamental — it is what lets the population
+            escape the deceptive local optima that defeat reward-only search.
+            Second, evolving the hyperparameters jointly with the policies
+            (rather than fixing them up front) is what differentiates
+            PBT-MAP-Elites from prior RL-based MAP-Elites methods such as
+            PGA-MAP-Elites and QD-PG: those methods inherit a single
+            user-tuned hyperparameter set and pay for it on environments
+            (notably HumanoidTrap) where the right amount of exploration
+            shifts over training.
+          </p>
+        </div>
+      </section>
+
+      <!-- ───── REPRODUCTION ───── -->
+      <section id="reproduction" class="section" aria-labelledby="repro-h">
+        <h2 id="repro-h">6. Our reproduction</h2>
+        <p class="section-lede">
+          What the team actually ran. The archive videos elsewhere on this
+          page were taken from these runs.
+        </p>
+
+        <div class="prose">
+          <p>
+            We trained PBT-MAP-Elites on two of the paper's five environments
+            using the upstream
+            <a href="https://github.com/adaptive-intelligent-robotics/QDax">QDax</a>
+            implementation. The third zip file the team produced
+            (<code>halfcheetah_s0.zip</code>, intended HalfCheetah-Uni
+            reproduction) and a fourth (<code>ant_uni_s3.zip</code>,
+            intended Ant-Uni reproduction) were corrupted at upload time
+            (missing the ZIP central-directory record on Drive itself, so
+            unrecoverable from our end). Those two environments are
+            therefore not represented in our archive videos. The runs that
+            <em>did</em> complete are:
+          </p>
+        </div>
+
+        <div class="repro-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Environment</th>
+                <th>Algorithm</th>
+                <th>Seed</th>
+                <th>Archive size</th>
+                <th>Cells filled</th>
+                <th>Training budget</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Walker2d-Uni</td>
+                <td>PBT-MAP-Elites (SAC)</td>
+                <td>2</td>
+                <td>512&nbsp;(CVT)</td>
+                <td>250</td>
+                <td>200 loops &times; 10&nbsp;000 env-steps = 2 M env-steps; net&nbsp;arch&nbsp;2&times;256</td>
+              </tr>
+              <tr>
+                <td>AntTrap</td>
+                <td>PBT-MAP-Elites&nbsp;<small>(variant not recorded in filename)</small></td>
+                <td>0</td>
+                <td>not&nbsp;recorded</td>
+                <td>420</td>
+                <td>not&nbsp;recorded</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="repro-note">
+            The Walker2d row is read off the QDax notebook output directory
+            name:
+            <code>me_sac_pbt_walker2d_uni_s2_c512_h256_pg10_ga30_loops200_train10000</code>
+            — algorithm (<code>me_sac_pbt</code>), env, seed
+            (<code>s2</code>), centroids (<code>c512</code>), hidden width
+            (<code>h256</code>), policy-gradient steps per loop
+            (<code>pg10</code>), variation iterations per loop
+            (<code>ga30</code>), outer loops (<code>loops200</code>), and
+            env-steps per loop (<code>train10000</code>). The AntTrap zip
+            was flattened to a single directory before upload, so only the
+            seed survives in the artifact metadata.
+          </p>
+        </div>
+
+        <div class="prose">
+          <p>
+            For provenance of the individual archive-cell rollouts shown in
+            §&nbsp;4, see
+            <a href="assets/rollouts-manifest.csv"><code>assets/rollouts-manifest.csv</code></a>
+            — it maps each MP4 on this page to its source archive cell
+            (fitness, behavior descriptor, cell index, original filename).
           </p>
         </div>
       </section>
 
       <!-- ───── RESOURCES ───── -->
       <section id="resources" class="section" aria-labelledby="res-h">
-        <h2 id="res-h">6. Resources</h2>
+        <h2 id="res-h">7. Resources</h2>
 
         <ul class="resource-list">
           <li>

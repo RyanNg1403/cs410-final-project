@@ -1,0 +1,7 @@
+page_video,environment,algorithm,seed,cell_idx,fitness,bd1,bd2,source_zip,source_filename_in_zip
+walker2d-archive-best.mp4,Walker2d-Uni,PBT-MAP-Elites (SAC),2,298,1383.649414,0.5110,0.8520,walker2d_uni_s2.zip,me_sac_pbt_walker2d_uni_s2_c512_h256_pg10_ga30_loops200_train10000/walker2d_uni_idx298_seed6_fit1383.649414_bd0.5110_0.8520.mp4
+walker2d-archive-gait-low.mp4,Walker2d-Uni,PBT-MAP-Elites (SAC),2,52,1206.196777,0.2820,0.8950,walker2d_uni_s2.zip,me_sac_pbt_walker2d_uni_s2_c512_h256_pg10_ga30_loops200_train10000/walker2d_uni_idx52_seed8_fit1206.196777_bd0.2820_0.8950.mp4
+walker2d-archive-gait-high.mp4,Walker2d-Uni,PBT-MAP-Elites (SAC),2,238,1044.440918,0.9980,0.6470,walker2d_uni_s2.zip,me_sac_pbt_walker2d_uni_s2_c512_h256_pg10_ga30_loops200_train10000/walker2d_uni_idx238_seed5_fit1044.440918_bd0.9980_0.6470.mp4
+anttrap-escape-up.mp4,AntTrap,PBT-MAP-Elites (variant not recorded in filename),0,276,1472.276001,30.0000,6.4063,anttrap_s0.zip,anttrap_s0/anttrap_idx276_seed13_fit1472.276001_bd30.0000_6.4063.mp4
+anttrap-escape-down.mp4,AntTrap,PBT-MAP-Elites (variant not recorded in filename),0,148,1418.362305,29.5123,-8.0000,anttrap_s0.zip,anttrap_s0/anttrap_idx148_seed1_fit1418.362305_bd29.5123_-8.0000.mp4
+anttrap-stuck.mp4,AntTrap,PBT-MAP-Elites (variant not recorded in filename),0,73,379.287476,0.0000,-8.0000,anttrap_s0.zip,anttrap_s0/anttrap_idx73_seed25_fit379.287476_bd0.0000_-8.0000.mp4

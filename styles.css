@@ -26,7 +26,7 @@
 
   /* layout */
   --measure: 760px;            /* main reading column */
-  --measure-wide: 1080px;      /* figures and wide content */
+  --measure-wide: var(--measure); /* figures, videos, and card grids are kept to the text column */
   --pad-x: clamp(20px, 5vw, 56px);
 
   /* motion */
@@ -515,6 +515,64 @@ a:hover {
   font-size: 0.96rem;
   line-height: 1.55;
   color: var(--ink-soft);
+}
+
+/* ── reproduction table ─────────────────────────────────── */
+.repro-table {
+  margin: 24px auto 0;
+  max-width: var(--measure);
+  overflow-x: auto;
+}
+.repro-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.94rem;
+  background: var(--bg);
+}
+.repro-table th,
+.repro-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.45;
+}
+.repro-table thead th {
+  border-bottom: 1.5px solid var(--ink);
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  font-weight: 600;
+}
+.repro-table td small {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.repro-table code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  color: var(--ink-soft);
+  background: var(--bg-alt);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.repro-note {
+  margin: 14px auto 0;
+  max-width: var(--measure);
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.repro-note code {
+  word-break: break-all;
+  font-family: var(--mono);
+  font-size: 0.85em;
+  color: var(--ink-soft);
+  background: var(--bg-alt);
+  padding: 1px 5px;
+  border-radius: 3px;
 }
 
 /* ── resources ──────────────────────────────────────────── */
