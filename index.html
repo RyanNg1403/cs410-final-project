@@ -186,9 +186,9 @@
         <h2 id="method-h">2. Method</h2>
         <p class="section-lede">
           PBT-MAP-Elites is a population-based training loop wrapped around a
-          MAP-Elites archive. The archive both selects the next individuals to
-          train and propagates strong hyperparameter configurations across the
-          population.
+          MAP-Elites archive. The archive seeds the next individuals to
+          train, and the population update supports online hyperparameter
+          adaptation alongside the policy updates.
         </p>
 
         <div class="prose">
@@ -439,10 +439,11 @@
         <p class="section-lede">
           PBT-MAP-Elites improves QD score and archive coverage over a
           population-based-training baseline that does not maintain a diversity
-          archive — in all five environments except HumanoidTrap, where the
-          two methods are comparable on coverage but PBT-MAP-Elites (SAC)
-          wins decisively on maximum fitness (it is the only method that
-          solves HumanoidTrap within the paper's budget).
+          archive — in all five environments except HumanoidTrap, which the
+          paper flags as the exception to this ranking. Separately, the SAC
+          variant of PBT-MAP-Elites is the only method in the comparison
+          that solves HumanoidTrap on maximum fitness within the paper's
+          budget.
         </p>
 
         <figure class="figure">
