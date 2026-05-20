@@ -343,7 +343,7 @@ h1.title {
 }
 .pseudocode .kw { color: #d8a370; font-weight: 500; }
 .pseudocode .var { color: #b6cdc9; font-style: italic; }
-.pseudocode .com { color: #6a6655; }
+.pseudocode .com { color: #968d78; }   /* bumped from #6a6655 for WCAG-AA contrast on the dark bg */
 
 /* Sidenotes that float in the margin */
 .sidenote {
@@ -395,6 +395,10 @@ h1.title {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.94rem;
+}
+.cmp-table td,
+.cmp-table th {
+  overflow-wrap: break-word;  /* long unbreakable tokens (file names, code) wrap instead of overflowing */
 }
 .cmp-table th,
 .cmp-table td {
@@ -517,7 +521,9 @@ h1.title {
   }
   .article > .margin-fig {
     grid-column: 2;
-    max-width: var(--measure);
+    /* These diagrams were sized for a 200-300px gutter; cap them so they don't
+       balloon to the full text column width on tablet-ish screens */
+    max-width: 420px;
     margin: 24px auto;
   }
   .article > .wide-fig {
